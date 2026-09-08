@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>給料計算アプリ｜CleanPay</title>
+<meta name="description" content="日当制・歩合制・時給制に対応した、シンプルで無料の給料計算アプリです。登録不要・スマホで完結。">
+<style>
+  :root {
+    --navy:#1a2744; --navy-mid:#2c3e6b; --sky:#4a90d9; --sky-light:#e8f2fc;
+    --white:#ffffff; --gray-light:#f5f6f8; --gray:#9aa0ae; --gray-dark:#555e72;
+    --accent:#2ecc8a; --accent-dark:#25a872; --danger:#e05252;
+    --border:#dde2ec; --text:#1e2535; --text-sub:#6b7590;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  :root { --font-main: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, 'Noto Sans JP', sans-serif; --font-scale: 100%; }
+  html { -webkit-text-size-adjust:100%; }
+  body { font-family:var(--font-main); background:var(--gray-light); color:var(--text); min-height:100vh; zoom:var(--font-scale); }
+
+  /* Header */
+  .app-header { background:var(--navy); color:var(--white); padding:0 20px; height:56px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(0,0,0,.25); }
+  .logo-block { display:flex; flex-direction:column; }
+  .logo { font-family:'Noto Serif JP',serif; font-size:21px; font-weight:700; letter-spacing:1px; }
+  .logo span { color:var(--accent); }
+  .logo-swoosh { width:100%; height:7px; margin-top:-4px; background:linear-gradient(90deg, var(--sky), var(--accent)); border-radius:4px; opacity:.9; }
+  .month-badge { background:var(--navy-mid); border-radius:20px; padding:4px 14px; font-size:13px; font-weight:500; }
+
+  /* Tab nav */
+  .tab-nav { background:var(--white); display:flex; border-bottom:2px solid var(--border); position:sticky; top:56px; z-index:99; }
+  .tab-btn { flex:1; padding:12px 4px; border:none; background:none; font-family:var(--font-main); font-size:12px; font-weight:500; color:var(--gray); cursor:pointer; border-bottom:3px solid transparent; margin-bottom:-2px; transition:all .2s; }
+  .tab-btn.active { color:var(--navy); border-bottom-color:var(--sky); }
+  .tab-btn .ti { font-size:18px; display:block; margin-bottom:2px; }
+
+  /* Main */
+  .main { max-width:680px; margin:0 auto; padding:16px 14px 100px; }
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* Panel */
+  .panel { background:var(--white); border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); padding:18px; margin-bottom:14px; overflow:hidden; }
+  .panel-title { font-size:14px; font-weight:700; color:var(--navy); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+
+  /* Form */
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; min-width:0; }
+  .form-row.s1 { grid-template-columns:1fr; }
+  .form-row > * { min-width:0; overflow:hidden; }
+  .form-group { display:flex; flex-direction:column; gap:4px; }
+  label { font-size:11px; font-weight:700; color:var(--text-sub); text-transform:uppercase; letter-spacing:.5px; }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    width:100%; max-width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:10px;
+    font-family:var(--font-main); font-size:14px; color:var(--text);
+    background:var(--white); transition:border-color .2s; outline:none;
+    box-sizing:border-box; min-width:0; -webkit-appearance:none; appearance:none;
+  }
+  select { background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7590' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:16px; padding-right:32px; }
+  input[type=date] { display:block; width:100%; }
+  input:focus, select:focus, textarea:focus { border-color:var(--sky); }
+  .hint { font-size:11.5px; color:var(--text-sub); margin-top:2px; }
+
+  /* Type chips */
+  .type-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:4px; width:100%; }
+  .type-chip { border:1.5px solid var(--border); border-radius:10px; padding:12px 4px; text-align:center; font-size:12px; font-weight:700; color:var(--gray-dark); cursor:pointer; transition:all .18s; background:var(--white); }
+  .type-chip .ci { font-size:22px; display:block; margin-bottom:4px; }
+  .type-chip.selected { background:var(--sky-light); border-color:var(--sky); color:var(--navy); }
+
+  /* Buttons */
+  .btn { border:none; border-radius:12px; font-family:var(--font-main); font-size:14px; font-weight:700; cursor:pointer; transition:all .18s; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .btn-primary { background:var(--sky); color:var(--white); padding:12px 20px; width:100%; }
+  .btn-primary:hover { background:#3a7ec8; }
+  .btn-accent { background:var(--accent); color:var(--white); padding:12px 20px; width:100%; }
+  .btn-accent:hover { background:var(--accent-dark); }
+  .btn-danger { background:transparent; color:var(--danger); border:1.5px solid var(--danger); padding:6px 12px; font-size:12px; }
+  .btn-outline { background:transparent; color:var(--navy); border:1.5px solid var(--border); padding:10px 16px; }
+  .btn-outline:hover { border-color:var(--sky); color:var(--sky); }
+  .btn-sm { padding:6px 12px; font-size:12px; border-radius:8px; }
+
+  /* Record card */
+  .record-card-wrap { border:1.5px solid var(--border); border-radius:12px; margin-bottom:8px; background:var(--white); overflow:hidden; }
+  .record-card { display:flex; align-items:center; gap:10px; padding:12px 14px; }
+  .rec-badge { width:42px; height:42px; background:var(--sky-light); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .rec-info { flex:1; min-width:0; }
+  .rec-title { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rec-meta { font-size:12px; color:var(--text-sub); margin-top:2px; }
+  .rec-amount { font-size:16px; font-weight:700; color:var(--navy); white-space:nowrap; text-align:right; }
+  .rec-amount-col { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+  .paid-chip { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; border:none; cursor:pointer; white-space:nowrap; }
+  .paid-chip.paid { background:#e3f9ee; color:var(--accent-dark); }
+  .paid-chip.unpaid { background:#fdece9; color:#b23b2e; }
+  .rec-edit { background:none; border:none; color:var(--sky); font-size:15px; cursor:pointer; padding:4px 2px; flex-shrink:0; }
+  .rec-del { background:none; border:none; color:var(--gray); font-size:16px; cursor:pointer; padding:4px 2px; flex-shrink:0; }
+  .rec-del:hover { color:var(--danger); }
+  .confirm-del-row { display:flex; align-items:center; gap:8px; padding:0 14px 12px; }
+  .confirm-del-row .cd-msg { flex:1; font-size:12px; color:var(--danger); font-weight:700; }
+  .edit-panel { padding:4px 14px 14px; border-top:1px dashed var(--border); }
+  .edit-panel .form-row { margin-bottom:8px; }
+
+  /* 取引先管理 */
+  .client-mgmt-list { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .client-chip { display:flex; align-items:center; gap:6px; padding:6px 6px 6px 12px; border:1.5px solid var(--border); border-radius:20px; font-size:12.5px; font-weight:700; color:var(--navy); background:var(--sky-light); }
+  .client-chip button { background:rgba(0,0,0,.08); border:none; color:var(--gray-dark); font-size:11px; cursor:pointer; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .client-chip button:hover { background:var(--danger); color:#fff; }
+
+  /* テンプレート */
+  .template-chip-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .template-chip { display:flex; align-items:center; gap:6px; padding:8px 6px 8px 14px; border:1.5px solid var(--border); border-radius:20px; background:var(--white); font-size:12.5px; font-weight:700; color:var(--navy); }
+  .template-chip .tpl-name { cursor:pointer; }
+  .template-chip .tpl-del { background:rgba(0,0,0,.08); border:none; color:var(--gray-dark); font-size:11px; cursor:pointer; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .template-chip .tpl-del:hover { background:var(--danger); color:#fff; }
+
+  /* 一括入力（CleanTax同仕様） */
+  .bulk-overlay { display:none; position:fixed; inset:0; background:rgba(20,25,40,.55); z-index:1000; align-items:flex-end; justify-content:center; }
+  .bulk-overlay.open { display:flex; }
+  .bulk-sheet { background:var(--white); width:100%; max-width:480px; border-radius:20px 20px 0 0; padding:18px 16px 20px; max-height:88vh; overflow-y:auto; }
+  .bulk-title { font-size:15px; font-weight:700; color:var(--navy); margin-bottom:4px; }
+  .bulk-sub { font-size:12px; color:var(--text-sub); margin-bottom:14px; }
+  .bulk-month-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .bulk-month-nav button { background:var(--gray-light); border:none; border-radius:8px; width:34px; height:34px; font-size:16px; color:var(--navy); cursor:pointer; }
+  .bulk-month-label { font-size:14px; font-weight:700; color:var(--navy); }
+  .bulk-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-bottom:12px; }
+  .bulk-dow { text-align:center; font-size:11px; color:var(--gray); font-weight:700; padding-bottom:4px; }
+  .bulk-day { position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:10px; font-size:13px; color:var(--text); background:var(--gray-light); cursor:pointer; user-select:none; border:1.5px solid transparent; }
+  .bulk-day.empty { background:none; cursor:default; }
+  .bulk-day.selected { background:var(--sky-light); border-color:var(--sky); color:var(--navy); font-weight:700; }
+  .bulk-day .cnt-badge { position:absolute; top:-6px; right:-6px; background:var(--accent); color:#fff; font-size:10px; font-weight:700; border-radius:10px; min-width:18px; height:18px; display:flex; align-items:center; justify-content:center; padding:0 3px; }
+  .bulk-summary { background:var(--gray-light); border-radius:12px; padding:10px 12px; font-size:12px; color:var(--text-sub); margin-bottom:14px; }
+  .bulk-summary b { color:var(--navy); }
+  .bulk-actions { display:flex; gap:8px; }
+
+  /* 文字サイズ */
+  .scale-row { display:flex; gap:8px; }
+  .scale-btn { flex:1; padding:12px 8px; border-radius:10px; border:1.5px solid var(--border); background:var(--white); color:var(--text); font-family:var(--font-main); font-size:14px; font-weight:700; cursor:pointer; transition:all .15s; }
+  .scale-btn.active { background:var(--sky); border-color:var(--sky); color:#fff; }
+
+  /* 時給制 詳細設定 */
+  .checkbox-row { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--navy); cursor:pointer; margin:2px 0 10px; }
+  .checkbox-row input[type=checkbox] { width:18px; height:18px; accent-color:var(--sky); flex-shrink:0; }
+  .band-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; margin-bottom:8px; font-size:13px; color:var(--navy); font-weight:600; }
+  .band-row button { background:rgba(0,0,0,.08); border:none; color:var(--gray-dark); font-size:11px; cursor:pointer; width:20px; height:20px; border-radius:50%; flex-shrink:0; }
+  .band-row button:hover { background:var(--danger); color:#fff; }
+  .scale-slider-row { display:flex; align-items:center; gap:10px; margin-top:16px; }
+  .scale-slider-row input[type=range] { flex:1; accent-color:var(--sky); height:4px; padding:0; border:none; background:transparent; }
+  .scale-slider-icon { font-size:12px; font-weight:700; color:var(--gray); flex-shrink:0; }
+  .scale-slider-icon.big { font-size:18px; }
+  #scale-value { font-size:13px; font-weight:700; color:var(--navy); min-width:42px; text-align:right; flex-shrink:0; }
+  .pending-badge { display:inline-block; background:#fff3cd; color:#8a6100; font-size:10px; font-weight:700; padding:2px 6px; border-radius:6px; margin-left:6px; vertical-align:middle; }
+  .pending-edit { display:flex; gap:8px; padding:0 14px 12px; }
+  .pending-edit input { flex:1; }
+
+  /* Summary */
+  .summary-card { background:var(--navy); color:var(--white); border-radius:16px; padding:18px; margin-bottom:14px; }
+  .sum-label { font-size:12px; color:rgba(255,255,255,.6); margin-bottom:4px; }
+  .sum-amount { font-family:'Noto Serif JP',serif; font-size:34px; font-weight:700; letter-spacing:-1px; }
+  .sum-amount span { font-size:15px; margin-left:4px; font-family:var(--font-main); }
+  .sum-breakdown { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:14px; }
+  .bd-item { background:rgba(255,255,255,.1); border-radius:10px; padding:10px; }
+  .bd-label { font-size:11px; color:rgba(255,255,255,.6); margin-bottom:2px; }
+  .bd-val { font-size:14px; font-weight:700; }
+
+  /* Month selector */
+  .month-sel { display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:14px; }
+  .month-sel button { background:none; border:none; font-size:20px; cursor:pointer; color:var(--navy); padding:4px 8px; border-radius:8px; }
+  .month-sel button:hover { background:var(--sky-light); }
+  .month-sel .ml { font-size:15px; font-weight:700; color:var(--navy); min-width:150px; max-width:220px; text-align:center; line-height:1.3; }
+
+  /* Toast */
+  .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--navy); color:var(--white); padding:11px 22px; border-radius:24px; font-size:14px; font-weight:500; opacity:0; transition:all .3s; z-index:999; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Empty */
+  .empty-state { text-align:center; padding:36px 20px; color:var(--gray); }
+  .empty-state .ei { font-size:44px; margin-bottom:10px; }
+  .empty-state p { font-size:14px; }
+
+  /* Footer links */
+  .sister-card { display:flex; align-items:center; gap:12px; padding:16px; border:1.5px solid var(--border); border-radius:14px; margin-bottom:10px; }
+  .sister-card .si { font-size:26px; flex-shrink:0; }
+  .sister-card .sb { flex:1; min-width:0; }
+  .sister-card .sb .sn { font-size:14px; font-weight:700; color:var(--navy); }
+  .sister-card .sb .sd { font-size:12px; color:var(--text-sub); margin-top:2px; }
+  .footer-note { text-align:center; font-size:12px; color:var(--gray); padding:20px 0 4px; }
+  .footer-note a { color:var(--sky); text-decoration:none; font-weight:600; }
+
+  /* 書き出し */
+  .export-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  /* 印刷用（PDF出力） */
+  .print-area { display:none; }
+  @media print {
+    body * { visibility:hidden; }
+    .print-area, .print-area * { visibility:visible; }
+    .print-area { position:absolute; left:0; top:0; width:100%; padding:24px; display:block; }
+  }
+  .print-area h1 { font-family:'Noto Serif JP',serif; font-size:20px; margin-bottom:4px; color:#000; letter-spacing:2px; }
+  .print-area .print-period { font-size:13px; color:#333; margin-bottom:18px; }
+  .print-area table { width:100%; border-collapse:collapse; font-size:12px; }
+  .print-area th, .print-area td { border:1px solid #999; padding:6px 8px; text-align:left; }
+  .print-area th { background:#eee; }
+  .print-area .print-total { margin-top:18px; font-size:16px; font-weight:700; text-align:right; color:#000; }
+  .print-area .print-breakdown { margin-top:6px; font-size:12px; color:#333; text-align:right; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo-block">
+    <div class="logo">Clean<span>Pay</span></div>
+    <div class="logo-swoosh"></div>
+  </div>
+  <div class="month-badge" id="headerBadge">給料計算</div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" data-view="calc"><span class="ti">🧮</span>入力</button>
+  <button class="tab-btn" data-view="history"><span class="ti">📋</span>履歴</button>
+  <button class="tab-btn" data-view="guide"><span class="ti">📖</span>ガイド</button>
+  <button class="tab-btn" data-view="settings"><span class="ti">⚙️</span>設定</button>
+</nav>
+
+<main class="main">
+
+  <!-- 計算タブ -->
+  <section class="view active" id="view-calc">
+    <div class="panel">
+      <div class="panel-title">🧮 入力方式を選ぶ</div>
+      <div class="type-grid" id="typeGrid">
+        <div class="type-chip selected" data-type="daily"><span class="ci">📅</span>日当制</div>
+        <div class="type-chip" data-type="commission"><span class="ci">📊</span>歩合制</div>
+        <div class="type-chip" data-type="hourly"><span class="ci">⏱️</span>時給制</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" id="formTitle">📅 日当制で入力</div>
+
+      <!-- 日当制 -->
+      <div id="form-daily">
+        <div class="form-row s1">
+          <div class="form-group">
+            <label>日当額（円）</label>
+            <input type="number" id="daily-amount" placeholder="15000" inputmode="numeric">
+          </div>
+        </div>
+      </div>
+
+      <!-- 歩合制 -->
+      <div id="form-commission" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label>売上金額（円）</label>
+            <input type="number" id="comm-revenue" placeholder="50000" inputmode="numeric">
+          </div>
+          <div class="form-group" id="comm-expense-group">
+            <label>経費（円・後から入力も可）</label>
+            <input type="number" id="comm-expense" placeholder="未入力でもOK" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-row s1">
+          <div class="form-group">
+            <label>歩合率（%）</label>
+            <input type="number" id="comm-rate" placeholder="60" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-row s1">
+          <div class="form-group">
+            <label>計算式</label>
+            <select id="comm-formula">
+              <option value="A">(売上−経費)×歩合率</option>
+              <option value="B">売上×歩合率−経費</option>
+              <option value="C">売上×歩合率のみ（経費考慮なし）</option>
+            </select>
+            <div class="hint" id="formulaHint">例：(売上−経費)×歩合率 で計算します</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 時給制 -->
+      <div id="form-hourly" style="display:none">
+        <div class="form-row s1">
+          <div class="form-group">
+            <label>基本時給（円）</label>
+            <input type="number" id="hourly-wage" placeholder="1200" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>出勤時刻</label>
+            <input type="time" id="hourly-start">
+          </div>
+          <div class="form-group">
+            <label>退勤時刻</label>
+            <input type="time" id="hourly-end">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>休憩開始（任意）</label>
+            <input type="time" id="hourly-break-start">
+          </div>
+          <div class="form-group">
+            <label>休憩終了（任意）</label>
+            <input type="time" id="hourly-break-end">
+          </div>
+        </div>
+        <div class="hint" id="hourlyPreview" style="margin-bottom:4px;"></div>
+      </div>
+
+      <div class="form-row s1">
+        <div class="form-group">
+          <label>店舗名・会社名（任意）</label>
+          <select id="calc-client"><option value="">選択なし</option></select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>日付</label>
+          <input type="date" id="calc-date">
+        </div>
+        <div class="form-group">
+          <label>メモ（任意）</label>
+          <input type="text" id="calc-memo" placeholder="現場名など">
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btnCalc" style="margin-top:6px">✅ 入力する</button>
+    </div>
+
+    <div class="panel">
+      <button class="btn btn-outline" id="btnBulkEntryToggle" type="button" style="width:100%;">🗓️ 一括入力（複数日まとめて登録）</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">⭐ よく使う入力</div>
+      <div class="template-chip-row" id="templateChipRow"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <input type="text" id="new-template-name" placeholder="テンプレート名（例：Aシフト）" style="flex:1;">
+        <button class="btn btn-outline btn-sm" id="btnSaveTemplate" type="button" style="white-space:nowrap;">＋ 保存</button>
+      </div>
+    </div>
+
+    <div class="panel" id="resultPanel" style="display:none">
+      <div class="summary-card">
+        <div class="sum-label">計算結果</div>
+        <div class="sum-amount" id="resultAmount">¥0<span>円</span></div>
+        <div class="sum-breakdown" id="resultBreakdown"></div>
+      </div>
+      <div class="hint" id="resultNote" style="display:none;margin-bottom:10px;"></div>
+      <button class="btn btn-accent" id="btnSave">💾 この結果を記録として保存</button>
+    </div>
+  </section>
+
+  <!-- 履歴タブ -->
+  <section class="view" id="view-history">
+    <div class="month-sel">
+      <button id="prevMonth">‹</button>
+      <div class="ml" id="monthLabel">2026年9月</div>
+      <button id="nextMonth">›</button>
+    </div>
+
+    <div class="form-row s1" style="margin-bottom:12px;">
+      <div class="form-group">
+        <label>取引先で絞り込み</label>
+        <select id="historyClientFilter"><option value="__all__">すべての取引先</option></select>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="sum-label">合計</div>
+      <div class="sum-amount" id="monthTotal">¥0<span>円</span></div>
+      <div class="sum-breakdown" id="typeBreakdown"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📈 直近6期間の推移</div>
+      <div id="trendChart"></div>
+    </div>
+
+    <div class="panel" id="bulkExpensePanel" style="display:none">
+      <div class="panel-title">🧾 今期の経費をまとめて入力</div>
+      <div class="hint" id="bulkHint" style="margin-bottom:10px;"></div>
+      <div class="form-row s1">
+        <div class="form-group">
+          <label>経費合計（円）</label>
+          <input type="number" id="bulk-expense-total" placeholder="0" inputmode="numeric">
+        </div>
+      </div>
+      <button class="btn btn-accent" id="btnBulkConfirm" style="margin-top:6px">✅ まとめて確定する</button>
+    </div>
+
+    <div id="recordList"></div>
+
+    <div class="panel">
+      <div class="panel-title">📤 記録を書き出す</div>
+      <div class="hint" style="margin-bottom:10px;">今表示している期間（絞り込み中の場合はその内容）を書き出します。</div>
+      <div class="export-actions">
+        <button class="btn btn-outline" id="btnExportPdf" type="button">📄 PDFで保存</button>
+        <button class="btn btn-outline" id="btnExportCsv" type="button">📊 CSVで保存</button>
+      </div>
+      <button class="btn btn-primary" id="btnBulkToCleanBill" type="button" style="width:100%;margin-top:10px;">🧾 表示中の記録をまとめてCleanBillへ送る</button>
+    </div>
+  </section>
+
+  <!-- ガイドタブ -->
+  <section class="view" id="view-guide">
+    <div class="panel">
+      <div class="panel-title">📖 CleanPayの使い方</div>
+      <div class="hint" style="margin-bottom:10px;">CleanPayは、日当制・歩合制・時給制のお給料をかんたんに計算できるアプリです。登録不要、スマホの中だけで完結します。</div>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-sub);line-height:1.9;">
+        <li>🧮「入力」タブで計算方式(日当制／歩合制／時給制)を選ぶ</li>
+        <li>金額などを入力して「計算する」をタップ</li>
+        <li>結果を確認して「記録として保存」をタップ</li>
+        <li>📋「履歴」タブで、月ごとの合計や記録の一覧を確認できる</li>
+      </ol>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📊 歩合制の計算式について</div>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-sub);line-height:1.9;">
+        <li><b>A：(売上−経費)×歩合率</b> ― 経費を先に引いてから歩合率を掛けます</li>
+        <li><b>B：売上×歩合率−経費</b> ― 歩合分を計算してから、経費（個人負担分）を後で引きます</li>
+        <li><b>C：売上×歩合率のみ</b> ― 経費は考慮しません</li>
+      </ol>
+      <div class="hint">入力タブでその都度選べるほか、設定タブでよく使う式をデフォルトにしておくと便利です。</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">⏱️ 時給制の深夜割増・時間帯別時給</div>
+      <div class="hint" style="line-height:1.9;">
+        時給制では「稼働時間」の代わりに<b>出勤時刻・退勤時刻</b>を入力します。休憩を取った場合は<b>休憩開始・休憩終了の時刻</b>も入力すると、その時間帯にかかった分だけ正しい時給から差し引かれます（例：深夜帯に休憩を取った場合は深夜分の時給から、日中なら通常時給から差し引かれます）。設定タブで「深夜割増率」と深夜帯(初期値22:00〜5:00)を設定しておけば、その時間にかかった分だけ自動で割増して計算されます。<br><br>
+        実働時間（休憩を除く）が設定タブの「残業の基準時間」(初期値8時間)を超えた分は、法定外残業として自動で割増計算されます(初期値+25%)。残業時間が深夜帯にもかかっている場合は、深夜割増と残業割増が合算されます（例：深夜+25%、残業+25%→合計+50%）。<br><br>
+        24時間営業の店舗など、時間帯ごとに時給がまったく違う場合は、設定タブの「時間帯ごとに時給を直接指定する」をONにして、朝・昼・深夜などの時間帯と時給を個別に登録できます（登録していない時間帯は基本時給が使われます）。
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🧾 経費を後から入力する</div>
+      <div class="hint" style="line-height:1.9;">
+        歩合制で経費が未定のときは、経費の欄を空欄のまま計算・保存できます。記録には「経費未入力」のバッジが付き、金額は歩合率だけを掛けた仮の金額になります。<br><br>
+        後日、履歴タブでその記録の✏️から経費を入力すれば、金額が自動で確定します。まとめて何件分もある場合は、履歴タブに表示される「🧾今期の経費をまとめて入力」から、経費の合計額を1回入力するだけで、各記録の売上比率に応じて自動で振り分けて確定できます。
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🏢 店舗名・会社名を分けて管理</div>
+      <div class="hint" style="line-height:1.9;">
+        お仕事を掛け持ちしていたり、元請けさんが複数ある場合は、設定タブの「店舗名・会社名を管理」で名前を登録しておくと、入力タブで記録ごとに選べるようになります。履歴タブでは店舗・会社ごとに絞り込んで、合計金額や内訳を確認できます。
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">✏️ 記録の編集・削除</div>
+      <div class="hint" style="line-height:1.9;">
+        履歴タブの各記録にある✏️をタップすると、金額・日付・メモ・取引先などをあとから修正できます。🗑️をタップすると削除の確認が表示され、「削除する」を押したときだけ実際に削除されます。
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🧾 CleanBillで請求書を作る</div>
+      <div class="hint" style="line-height:1.9;">
+        履歴タブ下部の「🧾表示中の記録をまとめてCleanBillへ送る」を押すと、今表示している期間(絞り込み中の場合はその内容)の記録が、まとめて請求書の項目としてCleanBillに追加されます。<br><br>
+        このとき、ホーム画面に追加したCleanBillのアイコンではなく、<b>通常のブラウザ画面としてCleanBillが開くことがあります</b>。これはお使いの機種やブラウザの仕組みによるもので、故障や不具合ではありません。<br><br>
+        データの保存場所はホーム画面のCleanBillと同じなので、そのまま内容を確認して「追加」すれば、そのあとホーム画面のCleanBillを開いたときにもきちんと反映されています。ご安心ください。
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">⚠️ 必ずお読みください</div>
+      <div class="hint" style="margin-bottom:10px;font-weight:700;color:var(--text);">📱 ホーム画面への追加が必須です</div>
+      <div class="hint" style="margin-bottom:14px;line-height:1.9;">このアプリはブラウザで開くWebアプリです。<b>必ずホーム画面に追加してアイコンから起動</b>するようにしてください。ブラウザのタブから毎回開くとデータが消えるリスクがあります。</div>
+
+      <div class="hint" style="margin-bottom:10px;font-weight:700;color:var(--text);">🗑️ キャッシュ削除でデータが消えます</div>
+      <div class="hint" style="margin-bottom:14px;line-height:1.9;">iPhoneの「設定」→「Safari」→「履歴とWebサイトデータを消去」を実行すると、アプリに保存した入力データがすべて消えてしまいます。<b>この操作は絶対に行わないでください。</b></div>
+
+      <div class="hint" style="line-height:1.9;">💾 入力したデータはあなたのスマホの中にのみ保存されます。他の人には見えません。また、機種変更の際はデータが引き継がれませんのでご注意ください。</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📱 ホーム画面への追加方法</div>
+      <div class="hint" style="margin-bottom:8px;font-weight:700;color:var(--text);">🍎 iPhoneの場合（Safari）</div>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-sub);line-height:1.9;margin-bottom:14px;">
+        <li>SafariでアプリのURLを開く</li>
+        <li>画面下の共有ボタン（□に↑）をタップ</li>
+        <li>「ホーム画面に追加」をタップ</li>
+        <li>右上の「追加」をタップ</li>
+        <li>ホーム画面にアイコンが追加されます ✅</li>
+      </ol>
+      <div class="hint" style="margin-bottom:8px;font-weight:700;color:var(--text);">🤖 Androidの場合（Chrome）</div>
+      <ol style="padding-left:20px;font-size:13px;color:var(--text-sub);line-height:1.9;">
+        <li>ChromeでアプリのURLを開く</li>
+        <li>右上の「⋮」メニューをタップ</li>
+        <li>「ホーム画面に追加」をタップ</li>
+        <li>「追加」をタップ</li>
+        <li>ホーム画面にアイコンが追加されます ✅</li>
+      </ol>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">❓ よくあるご質問</div>
+      <div class="hint" style="margin-bottom:4px;font-weight:700;color:var(--text);">Q. 入力したデータが消えてしまいました</div>
+      <div class="hint" style="margin-bottom:14px;line-height:1.9;">ブラウザのキャッシュ削除や、ブラウザのタブから毎回開いていると発生することがあります。必ずホーム画面のアイコンから起動してください。</div>
+      <div class="hint" style="margin-bottom:4px;font-weight:700;color:var(--text);">Q. 機種変更したらデータはどうなりますか？</div>
+      <div class="hint" style="margin-bottom:14px;line-height:1.9;">データはスマホの中に保存されているため、機種変更するとデータは引き継がれません。月末など、きりの良いタイミングで金額を控えておくことをおすすめします。</div>
+      <div class="hint" style="margin-bottom:4px;font-weight:700;color:var(--text);">Q. 複数のスマホでデータを共有できますか？</div>
+      <div class="hint" style="line-height:1.9;">現在のバージョンでは、データの共有はできません。それぞれのスマホで個別に管理してください。</div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📱 Clean Apps シリーズ</div>
+      <a href="https://cleanbillapp.github.io/CleanApps/" style="display:block;text-align:center;color:var(--sky);font-weight:700;font-size:13px;text-decoration:none;">仕事をもっとシンプルに。CleanApps を見る ›</a>
+    </div>
+  </section>
+
+  <!-- 設定タブ -->
+  <section class="view" id="view-settings">
+    <div class="panel">
+      <div class="panel-title">🔤 文字の大きさ</div>
+      <div class="scale-row">
+        <button class="scale-btn" data-scale="100" type="button">標準</button>
+        <button class="scale-btn" data-scale="115" type="button">大きめ</button>
+        <button class="scale-btn" data-scale="130" type="button">特大</button>
+      </div>
+      <div class="scale-slider-row">
+        <span class="scale-slider-icon">A</span>
+        <input type="range" id="scale-slider" min="90" max="150" step="5" value="100">
+        <span class="scale-slider-icon big">A</span>
+        <span id="scale-value">100%</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">⚙️ デフォルト設定</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>デフォルト歩合率（%）</label>
+          <input type="number" id="set-rate" placeholder="60">
+        </div>
+        <div class="form-group">
+          <label>デフォルト時給（円）</label>
+          <input type="number" id="set-hourly" placeholder="1200">
+        </div>
+      </div>
+      <div class="form-row s1">
+        <div class="form-group">
+          <label>締め日（毎月）</label>
+          <input type="number" id="set-closing" min="1" max="31" placeholder="未入力＝暦通り（1日〜末日）">
+          <div class="hint">例：20を入力すると「9月度」は8/21〜9/20として集計されます</div>
+        </div>
+      </div>
+      <div class="form-row s1">
+        <div class="form-group">
+          <label>歩合制の計算式（デフォルト）</label>
+          <select id="set-formula">
+            <option value="A">(売上−経費)×歩合率</option>
+            <option value="B">売上×歩合率−経費</option>
+            <option value="C">売上×歩合率のみ（経費考慮なし）</option>
+          </select>
+          <div class="hint">A：経費を先に引いてから歩合率を掛けます／B：歩合分から経費（個人負担分）を後で引きます／C：経費は考慮せず売上×歩合率のみで計算します</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>深夜割増率（%）</label>
+          <input type="number" id="set-night-pct" placeholder="25">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:6px;">
+        <div class="form-group">
+          <label>深夜帯 開始</label>
+          <input type="time" id="set-night-start">
+        </div>
+        <div class="form-group">
+          <label>深夜帯 終了</label>
+          <input type="time" id="set-night-end">
+        </div>
+      </div>
+      <div class="hint" style="margin-bottom:10px;">時給制で出勤・退勤時刻を入力すると、この時間帯にかかった分だけ自動で割増計算します（目安：22:00〜5:00）。</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>残業の基準時間（h/日）</label>
+          <input type="number" id="set-ot-threshold" placeholder="8" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>残業割増率（%）</label>
+          <input type="number" id="set-ot-pct" placeholder="25">
+        </div>
+      </div>
+      <div class="hint" style="margin-bottom:10px;">実働時間（休憩を除く）がこの時間を超えた分は、法定外残業として自動で割増計算します（目安：1日8時間・割増25%）。深夜帯と重なる場合は、深夜割増と残業割増が合算されます。</div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="set-use-bands">
+        時間帯ごとに時給を直接指定する（下の「時間帯別の時給」を使う）
+      </label>
+      <button class="btn btn-primary" id="btnSaveSettings" style="margin-top:6px">💾 設定を保存</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">⏰ 時間帯別の時給（上級者向け）</div>
+      <div class="hint" style="margin-bottom:10px;">上の「時間帯ごとに時給を直接指定する」をONにすると、ここで登録した時間帯が深夜割増より優先して使われます。登録していない時間帯は基本時給が使われます。</div>
+      <div id="wageBandList"></div>
+      <div class="form-row" style="margin-top:10px;">
+        <div class="form-group">
+          <label>開始</label>
+          <input type="time" id="new-band-start">
+        </div>
+        <div class="form-group">
+          <label>終了</label>
+          <input type="time" id="new-band-end">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>時給（円）</label>
+          <input type="number" id="new-band-rate" placeholder="1300">
+        </div>
+        <div class="form-group">
+          <label>ラベル（任意）</label>
+          <input type="text" id="new-band-label" placeholder="例：深夜">
+        </div>
+      </div>
+      <button class="btn btn-outline" id="btnAddBand" type="button" style="width:100%;margin-top:4px">＋ 時間帯を追加</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🏢 店舗名・会社名を管理</div>
+      <div class="hint" style="margin-bottom:10px;">掛け持ちしているお仕事や、複数の元請けさんがいる場合に、記録を分けて管理できます。</div>
+      <div class="form-row s1">
+        <div class="form-group">
+          <label>店舗名・会社名を追加</label>
+          <input type="text" id="new-client-name" placeholder="例：株式会社◯◯／◯◯管理">
+        </div>
+      </div>
+      <button class="btn btn-outline" id="btnAddClient" style="width:100%;margin-top:4px">＋ 追加</button>
+      <div class="client-mgmt-list" id="clientMgmtList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">💾 バックアップ・復元</div>
+      <div class="hint" style="margin-bottom:10px;">機種変更やアプリの再インストールに備えて、記録をファイルとして保存・復元できます。</div>
+      <div class="export-actions">
+        <button class="btn btn-outline" id="btnBackupExport" type="button">📤 書き出す</button>
+        <button class="btn btn-outline" id="btnBackupImport" type="button">📥 読み込む</button>
+      </div>
+      <input type="file" id="backupFileInput" accept="application/json" style="display:none">
+      <div id="importConfirmPanel" style="display:none;margin-top:12px;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:var(--sky-light);">
+        <div id="importConfirmMsg" style="font-size:13px;color:var(--navy);font-weight:700;margin-bottom:10px;"></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-outline btn-sm" id="btnImportCancel" type="button" style="flex:1;">キャンセル</button>
+          <button class="btn btn-sm" id="btnImportConfirm" type="button" style="flex:1;background:var(--danger);color:#fff;">上書きして読み込む</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">🤝 仲間にも使ってもらおう！</div>
+      <button class="btn btn-outline" id="btnShare" style="width:100%">📲 友達にアプリを教える</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📱 Clean Apps シリーズ</div>
+      <div class="sister-card">
+        <div class="si">🧾</div>
+        <div class="sb"><div class="sn">CleanBill</div><div class="sd">請求書・経費管理をかんたんに</div></div>
+      </div>
+      <div class="sister-card">
+        <div class="si">📊</div>
+        <div class="sb"><div class="sn">CleanTax</div><div class="sd">確定申告をかんたんに</div></div>
+      </div>
+      <div class="sister-card">
+        <div class="si">🏢</div>
+        <div class="sb"><div class="sn">CleanSite</div><div class="sd">現場情報をかんたんに</div></div>
+      </div>
+      <a href="https://cleanbillapp.github.io/CleanApps/" style="display:block;text-align:center;margin-top:6px;color:var(--sky);font-weight:700;font-size:13px;text-decoration:none;">仕事をもっとシンプルに。CleanApps を見る ›</a>
+    </div>
+
+    <div class="footer-note">CleanPay は Clean Apps シリーズの一部です</div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<!-- 一括入力カレンダーモーダル -->
+<div class="bulk-overlay" id="bulkOverlay">
+  <div class="bulk-sheet">
+    <div class="bulk-title">🗓️ 一括入力</div>
+    <div class="bulk-sub">登録する日付をタップ（もう一度タップで×2、×3…同日複数件に）</div>
+    <div class="bulk-month-nav">
+      <button type="button" onclick="bulkChangeMonth(-1)">‹</button>
+      <div class="bulk-month-label" id="bulkMonthLabel"></div>
+      <button type="button" onclick="bulkChangeMonth(1)">›</button>
+    </div>
+    <div class="bulk-grid" id="bulkGrid"></div>
+    <div class="bulk-summary" id="bulkSummary">日付が選択されていません</div>
+    <div class="bulk-actions">
+      <button class="btn btn-outline" style="flex:1;" type="button" onclick="closeBulkModal()">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1.4;" type="button" id="bulkConfirmBtn" onclick="confirmBulkAdd()">登録する</button>
+    </div>
+  </div>
+</div>
+
+<div id="printArea" class="print-area"></div>
+
+<script>
+(function(){
+  var STORE_KEY = 'cleanpay_records_v1';
+  var SETTINGS_KEY = 'cleanpay_settings_v1';
+
+  var state = {
+    type: 'daily',
+    records: JSON.parse(localStorage.getItem(STORE_KEY) || '[]'),
+    settings: JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'),
+    lastResult: null,
+    monthCursor: new Date()
+  };
+  var typeMeta = {
+    daily: { icon:'📅', label:'日当制' },
+    commission: { icon:'📊', label:'歩合制' },
+    hourly: { icon:'⏱️', label:'時給制' }
+  };
+
+  function saveRecords(){ localStorage.setItem(STORE_KEY, JSON.stringify(state.records)); }
+  function saveSettings(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings)); }
+  function yen(n){ return '¥' + Math.round(n).toLocaleString('ja-JP'); }
+  function todayStr(){ var d = new Date(); return d.toISOString().slice(0,10); }
+  function formTitleText(type){
+    return typeMeta[type].icon + ' ' + typeMeta[type].label + (type === 'daily' ? 'で入力' : 'で計算');
+  }
+  function calcButtonLabel(type){
+    return type === 'daily' ? '✅ 入力する' : '✅ 計算する';
+  }
+  // ─── 時給制：時間帯計算（深夜割増 / 時間帯別時給） ───
+  function timeToMinutes(t){
+    if (!t) return null;
+    var parts = t.split(':');
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  }
+  function bandInstances(start, end){
+    if (start == null || end == null) return [];
+    if (end > start) return [[start, end]];
+    if (end < start) return [[start, 1440], [0, end]];
+    return [[0, 1440]];
+  }
+  function overlapMinutes(shiftStart, shiftEnd, bandStart, bandEnd){
+    var insts = bandInstances(bandStart, bandEnd);
+    var total = 0;
+    insts.forEach(function(seg){
+      total += Math.max(0, Math.min(shiftEnd, seg[1]) - Math.max(shiftStart, seg[0]));
+      total += Math.max(0, Math.min(shiftEnd, seg[1] + 1440) - Math.max(shiftStart, seg[0] + 1440));
+    });
+    return total;
+  }
+  function computeHourlyBreakdown(startStr, endStr, breakStartStr, breakEndStr, baseWage){
+    var startMin = timeToMinutes(startStr);
+    var endMinRaw = timeToMinutes(endStr);
+    if (startMin == null || endMinRaw == null) return null;
+    var endMin = endMinRaw <= startMin ? endMinRaw + 1440 : endMinRaw;
+    var totalMinutes = endMin - startMin;
+    if (totalMinutes <= 0) return null;
+
+    // 休憩の時間帯をシフトのタイムラインに合わせる（日をまたぐ場合を考慮）
+    var breakStartMin = null, breakEndMin = null;
+    if (breakStartStr && breakEndStr) {
+      var rawBreakStart = timeToMinutes(breakStartStr);
+      var rawBreakEnd = timeToMinutes(breakEndStr);
+      var breakDuration = (rawBreakEnd <= rawBreakStart) ? (rawBreakEnd + 1440 - rawBreakStart) : (rawBreakEnd - rawBreakStart);
+      var aligned = rawBreakStart < startMin ? rawBreakStart + 1440 : rawBreakStart;
+      breakStartMin = Math.max(startMin, aligned);
+      breakEndMin = Math.min(endMin, aligned + breakDuration);
+      if (breakEndMin <= breakStartMin) { breakStartMin = null; breakEndMin = null; }
+    }
+    function breakOverlap(bandStart, bandEnd){
+      if (breakStartMin == null) return 0;
+      return overlapMinutes(breakStartMin, breakEndMin, bandStart, bandEnd);
+    }
+    var totalBreakMinutes = breakStartMin != null ? (breakEndMin - breakStartMin) : 0;
+
+    // 実働区間（休憩を除いた区間リスト）→ 法定外残業（8時間超）の判定に使用
+    var workedIntervals;
+    if (breakStartMin != null) {
+      workedIntervals = [];
+      if (breakStartMin > startMin) workedIntervals.push([startMin, breakStartMin]);
+      if (breakEndMin < endMin) workedIntervals.push([breakEndMin, endMin]);
+    } else {
+      workedIntervals = [[startMin, endMin]];
+    }
+    var actualWorkedMinutes = workedIntervals.reduce(function(s, iv){ return s + (iv[1] - iv[0]); }, 0);
+    var otThresholdMin = ((state.settings.otThresholdHours != null) ? state.settings.otThresholdHours : 8) * 60;
+    var otPct = (state.settings.otPct != null) ? state.settings.otPct : 25;
+    var otMinutesTotal = Math.max(0, actualWorkedMinutes - otThresholdMin);
+    var otRanges = [];
+    if (otMinutesTotal > 0) {
+      var remaining = otMinutesTotal;
+      for (var i = workedIntervals.length - 1; i >= 0 && remaining > 0; i--) {
+        var iv = workedIntervals[i];
+        var take = Math.min(remaining, iv[1] - iv[0]);
+        otRanges.push([iv[1] - take, iv[1]]);
+        remaining -= take;
+      }
+    }
+    function otOverlap(bandStart, bandEnd){
+      var total = 0;
+      otRanges.forEach(function(r){ total += overlapMinutes(r[0], r[1], bandStart, bandEnd); });
+      return total;
+    }
+
+    var segments = [];
+    if (state.settings.useWageBands && (state.settings.wageBands || []).length > 0) {
+      var covered = 0, breakCovered = 0, otCovered = 0;
+      state.settings.wageBands.forEach(function(b){
+        var bStart = timeToMinutes(b.start), bEnd = timeToMinutes(b.end);
+        var raw = overlapMinutes(startMin, endMin, bStart, bEnd);
+        var brk = breakOverlap(bStart, bEnd);
+        var ot = otOverlap(bStart, bEnd);
+        covered += raw; breakCovered += brk; otCovered += ot;
+        var netMinutes = Math.max(0, raw - brk);
+        var otNet = Math.min(ot, netMinutes);
+        var normalNet = Math.max(0, netMinutes - otNet);
+        var label = b.label || (b.start + '〜' + b.end);
+        if (normalNet > 0) segments.push({ label: label, rate: b.rate, minutes: normalNet });
+        if (otNet > 0) segments.push({ label: label + '残業(+' + otPct + '%)', rate: b.rate * (1 + otPct / 100), minutes: otNet });
+      });
+      var leftoverRaw = Math.max(0, totalMinutes - covered);
+      var leftoverBreak = Math.max(0, totalBreakMinutes - breakCovered);
+      var leftoverNet = Math.max(0, leftoverRaw - leftoverBreak);
+      var leftoverOTNet = Math.min(Math.max(0, otMinutesTotal - otCovered), leftoverNet);
+      var leftoverNormalNet = Math.max(0, leftoverNet - leftoverOTNet);
+      if (leftoverNormalNet > 0) segments.push({ label: '基本', rate: baseWage, minutes: leftoverNormalNet });
+      if (leftoverOTNet > 0) segments.push({ label: '基本残業(+' + otPct + '%)', rate: baseWage * (1 + otPct / 100), minutes: leftoverOTNet });
+    } else {
+      var nightStart = timeToMinutes(state.settings.nightStart || '22:00');
+      var nightEnd = timeToMinutes(state.settings.nightEnd || '05:00');
+      var nightPct = (state.settings.nightPct != null) ? state.settings.nightPct : 25;
+      var nightRaw = overlapMinutes(startMin, endMin, nightStart, nightEnd);
+      var nightBreak = breakOverlap(nightStart, nightEnd);
+      var nightOT = otOverlap(nightStart, nightEnd);
+      var nightNet = Math.max(0, nightRaw - nightBreak);
+      var nightOTNet = Math.min(nightOT, nightNet);
+      var nightNormalNet = Math.max(0, nightNet - nightOTNet);
+
+      var dayRaw = Math.max(0, totalMinutes - nightRaw);
+      var dayBreak = Math.max(0, totalBreakMinutes - nightBreak);
+      var dayOT = Math.max(0, otMinutesTotal - nightOT);
+      var dayNet = Math.max(0, dayRaw - dayBreak);
+      var dayOTNet = Math.min(dayOT, dayNet);
+      var dayNormalNet = Math.max(0, dayNet - dayOTNet);
+
+      if (dayNormalNet > 0) segments.push({ label: '通常', rate: baseWage, minutes: dayNormalNet });
+      if (dayOTNet > 0) segments.push({ label: '残業(+' + otPct + '%)', rate: baseWage * (1 + otPct / 100), minutes: dayOTNet });
+      if (nightNormalNet > 0) segments.push({ label: '深夜(+' + nightPct + '%)', rate: baseWage * (1 + nightPct / 100), minutes: nightNormalNet });
+      if (nightOTNet > 0) segments.push({ label: '深夜残業(+' + nightPct + '%+' + otPct + '%)', rate: baseWage * (1 + nightPct / 100 + otPct / 100), minutes: nightOTNet });
+    }
+    segments = segments.filter(function(s){ return s.minutes > 0.01; });
+    var amount = segments.reduce(function(sum, s){ return sum + (s.minutes / 60) * s.rate; }, 0);
+    var workedHours = segments.reduce(function(sum, s){ return sum + s.minutes / 60; }, 0);
+    return { segments: segments, amount: amount, workedHours: workedHours, breakMinutes: totalBreakMinutes };
+  }
+  function hourlyDetail(bd, startStr, endStr, breakStartStr, breakEndStr){
+    var segStr = bd.segments.map(function(s){
+      var h = Math.round((s.minutes / 60) * 10) / 10;
+      return s.label + h + 'h';
+    }).join('＋');
+    var breakStr = (breakStartStr && breakEndStr) ? '（休憩' + breakStartStr + '〜' + breakEndStr + '）' : '';
+    return startStr + '〜' + endStr + breakStr + ' ' + segStr;
+  }
+  function updateHourlyPreview(){
+    var wage = parseFloat(document.getElementById('hourly-wage').value) || 0;
+    var startStr = document.getElementById('hourly-start').value;
+    var endStr = document.getElementById('hourly-end').value;
+    var breakStartStr = document.getElementById('hourly-break-start').value;
+    var breakEndStr = document.getElementById('hourly-break-end').value;
+    var el = document.getElementById('hourlyPreview');
+    if (!wage || !startStr || !endStr) { el.textContent = ''; return; }
+    var bd = computeHourlyBreakdown(startStr, endStr, breakStartStr, breakEndStr, wage);
+    if (!bd || bd.workedHours <= 0) { el.textContent = '⚠️ 退勤時刻は出勤時刻より後になるようにしてください'; return; }
+    var segStr = bd.segments.map(function(s){
+      return s.label + (Math.round((s.minutes / 60) * 10) / 10) + 'h';
+    }).join('＋');
+    el.textContent = '実働 ' + (Math.round(bd.workedHours * 10) / 10) + 'h（' + segStr + '）＝' + yen(bd.amount);
+  }
+
+  function computeCommission(revenue, expense, rate, formula, pending){
+    if (formula === 'C') return revenue * (rate / 100);
+    if (pending) return revenue * (rate / 100);
+    if (formula === 'B') return Math.max(0, revenue * (rate / 100) - expense);
+    return Math.max(0, revenue - expense) * (rate / 100);
+  }
+  function commissionDetail(revenue, expense, rate, formula, pending){
+    if (formula === 'C') return '売上' + yen(revenue) + ' ×' + rate + '%（経費なし）';
+    if (pending) return '売上' + yen(revenue) + ' 経費未入力 ×' + rate + '%（仮）';
+    if (formula === 'B') return '売上' + yen(revenue) + ' ×' + rate + '% − 経費' + yen(expense);
+    return '売上' + yen(revenue) + ' 経費' + yen(expense) + ' ×' + rate + '%';
+  }
+  function formulaHintText(formula){
+    if (formula === 'B') return '例：売上×歩合率−経費 で計算します';
+    if (formula === 'C') return '例：売上×歩合率のみで計算します（経費は考慮しません）';
+    return '例：(売上−経費)×歩合率 で計算します';
+  }
+  function updateExpenseVisibility(){
+    var isC = document.getElementById('comm-formula').value === 'C';
+    document.getElementById('comm-expense-group').style.display = isC ? 'none' : '';
+  }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+
+  // 取引先・元請け管理
+  function refreshClientOptions(){
+    var clients = state.settings.clients || [];
+    var calcSel = document.getElementById('calc-client');
+    var filterSel = document.getElementById('historyClientFilter');
+    var curCalc = calcSel.value;
+    var curFilter = filterSel.value;
+    var optionsHtml = clients.map(function(c){
+      return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>';
+    }).join('');
+    calcSel.innerHTML = '<option value="">選択なし</option>' + optionsHtml;
+    filterSel.innerHTML = '<option value="__all__">すべての取引先</option>' + optionsHtml;
+    if (clients.indexOf(curCalc) !== -1) calcSel.value = curCalc;
+    if (curFilter === '__all__' || clients.indexOf(curFilter) !== -1) filterSel.value = curFilter;
+  }
+  function renderClientMgmtList(){
+    var list = document.getElementById('clientMgmtList');
+    var clients = state.settings.clients || [];
+    if (clients.length === 0) {
+      list.innerHTML = '<div class="hint">まだ登録されていません</div>';
+      return;
+    }
+    list.innerHTML = '';
+    clients.forEach(function(name){
+      var chip = document.createElement('div');
+      chip.className = 'client-chip';
+      chip.innerHTML = '<span>' + escapeHtml(name) + '</span><button type="button">✕</button>';
+      chip.querySelector('button').addEventListener('click', function(){
+        state.settings.clients = state.settings.clients.filter(function(c){ return c !== name; });
+        saveSettings();
+        renderClientMgmtList();
+        refreshClientOptions();
+        renderHistory();
+        toast('取引先を削除しました');
+      });
+      list.appendChild(chip);
+    });
+  }
+  function clientOptionsHtml(selected){
+    var clients = (state.settings.clients || []).slice();
+    if (selected && clients.indexOf(selected) === -1) clients.push(selected);
+    var html = '<option value=""' + (!selected ? ' selected' : '') + '>選択なし</option>';
+    clients.forEach(function(c){
+      html += '<option value="' + escapeHtml(c) + '"' + (c === selected ? ' selected' : '') + '>' + escapeHtml(c) + '</option>';
+    });
+    return html;
+  }
+  document.getElementById('btnAddClient').addEventListener('click', function(){
+    var input = document.getElementById('new-client-name');
+    var name = input.value.trim();
+    if (!name) { toast('取引先名を入力してください'); return; }
+    state.settings.clients = state.settings.clients || [];
+    if (state.settings.clients.indexOf(name) === -1) state.settings.clients.push(name);
+    saveSettings();
+    input.value = '';
+    renderClientMgmtList();
+    refreshClientOptions();
+    toast('取引先を追加しました');
+  });
+  document.getElementById('historyClientFilter').addEventListener('change', function(){
+    renderHistory();
+  });
+
+  // よく使う現場テンプレート
+  function renderTemplateChips(){
+    var row = document.getElementById('templateChipRow');
+    var templates = state.settings.templates || [];
+    if (templates.length === 0) {
+      row.innerHTML = '<div class="hint">まだ登録されていません。内容を入力してから下の「＋保存」を押すと、次から1タップで呼び出せます。</div>';
+      return;
+    }
+    row.innerHTML = '';
+    templates.forEach(function(t){
+      var chip = document.createElement('div');
+      chip.className = 'template-chip';
+      chip.innerHTML = '<span class="tpl-name">' + typeMeta[t.type].icon + ' ' + escapeHtml(t.name) + '</span><button type="button" class="tpl-del">✕</button>';
+      chip.querySelector('.tpl-name').addEventListener('click', function(){ applyTemplate(t); });
+      chip.querySelector('.tpl-del').addEventListener('click', function(){
+        state.settings.templates = state.settings.templates.filter(function(x){ return x.id !== t.id; });
+        saveSettings();
+        renderTemplateChips();
+        toast('テンプレートを削除しました');
+      });
+      row.appendChild(chip);
+    });
+  }
+  function applyTemplate(t){
+    document.querySelectorAll('.type-chip').forEach(function(c){ c.classList.toggle('selected', c.dataset.type === t.type); });
+    state.type = t.type;
+    document.getElementById('form-daily').style.display = t.type === 'daily' ? '' : 'none';
+    document.getElementById('form-commission').style.display = t.type === 'commission' ? '' : 'none';
+    document.getElementById('form-hourly').style.display = t.type === 'hourly' ? '' : 'none';
+    document.getElementById('formTitle').textContent = formTitleText(t.type);
+    document.getElementById('btnCalc').textContent = calcButtonLabel(t.type);
+    document.getElementById('resultPanel').style.display = 'none';
+
+    if (t.type === 'daily') {
+      document.getElementById('daily-amount').value = t.amount || '';
+    } else if (t.type === 'commission') {
+      document.getElementById('comm-rate').value = (t.rate != null) ? t.rate : (state.settings.rate || 60);
+      document.getElementById('comm-formula').value = t.formula || state.settings.commissionFormula || 'A';
+      document.getElementById('formulaHint').textContent = formulaHintText(document.getElementById('comm-formula').value);
+      updateExpenseVisibility();
+      document.getElementById('comm-revenue').value = '';
+      document.getElementById('comm-expense').value = '';
+    } else if (t.type === 'hourly') {
+      document.getElementById('hourly-wage').value = (t.wage != null) ? t.wage : (state.settings.hourly || '');
+    }
+    document.getElementById('calc-client').value = t.client || '';
+    document.getElementById('calc-memo').value = t.memo || '';
+    toast('「' + t.name + '」を反映しました');
+  }
+  document.getElementById('btnSaveTemplate').addEventListener('click', function(){
+    var nameInput = document.getElementById('new-template-name');
+    var name = nameInput.value.trim();
+    if (!name) { toast('テンプレート名を入力してください'); return; }
+    var t = {
+      id: Date.now(),
+      name: name,
+      type: state.type,
+      client: document.getElementById('calc-client').value,
+      memo: document.getElementById('calc-memo').value.trim()
+    };
+    if (state.type === 'daily') {
+      t.amount = parseFloat(document.getElementById('daily-amount').value) || 0;
+    } else if (state.type === 'commission') {
+      t.rate = parseFloat(document.getElementById('comm-rate').value) || (state.settings.rate || 60);
+      t.formula = document.getElementById('comm-formula').value;
+    } else if (state.type === 'hourly') {
+      t.wage = parseFloat(document.getElementById('hourly-wage').value) || 0;
+    }
+    state.settings.templates = state.settings.templates || [];
+    state.settings.templates.push(t);
+    saveSettings();
+    nameInput.value = '';
+    renderTemplateChips();
+    toast('テンプレートを保存しました');
+  });
+
+  // 一括入力（複数日まとめて登録）CleanTax同仕様のカレンダーモーダル
+  function buildRecordForDate(dateStr){
+    var memo = document.getElementById('calc-memo').value.trim();
+    var client = document.getElementById('calc-client').value;
+    if (state.type === 'daily') {
+      var amount = parseFloat(document.getElementById('daily-amount').value) || 0;
+      return { type: 'daily', amount: amount, date: dateStr, memo: memo, client: client, detail: '日当 ' + yen(amount), pending: false, paid: false };
+    } else if (state.type === 'commission') {
+      var revenue = parseFloat(document.getElementById('comm-revenue').value) || 0;
+      var expenseStr = document.getElementById('comm-expense').value;
+      var rate = parseFloat(document.getElementById('comm-rate').value);
+      if (isNaN(rate)) rate = state.settings.rate || 60;
+      var formulaSel = document.getElementById('comm-formula').value;
+      var formula = (formulaSel === 'B' || formulaSel === 'C') ? formulaSel : 'A';
+      var pending = (formula !== 'C') && (expenseStr === '' || expenseStr === null);
+      var expense = pending ? 0 : (parseFloat(expenseStr) || 0);
+      return {
+        type: 'commission', amount: computeCommission(revenue, expense, rate, formula, pending),
+        date: dateStr, memo: memo, client: client, detail: commissionDetail(revenue, expense, rate, formula, pending),
+        pending: pending, revenue: revenue, expense: (formula === 'C') ? null : (pending ? null : expense),
+        rate: rate, formula: formula, paid: false
+      };
+    } else if (state.type === 'hourly') {
+      var wage = parseFloat(document.getElementById('hourly-wage').value) || 0;
+      var startStr = document.getElementById('hourly-start').value;
+      var endStr = document.getElementById('hourly-end').value;
+      var breakStartStr = document.getElementById('hourly-break-start').value;
+      var breakEndStr = document.getElementById('hourly-break-end').value;
+      var bd = computeHourlyBreakdown(startStr, endStr, breakStartStr, breakEndStr, wage);
+      if (!bd || bd.workedHours <= 0) return null;
+      return {
+        type: 'hourly', amount: bd.amount, date: dateStr, memo: memo, client: client,
+        detail: hourlyDetail(bd, startStr, endStr, breakStartStr, breakEndStr), pending: false,
+        wage: wage, startTime: startStr, endTime: endStr,
+        breakStart: breakStartStr || null, breakEnd: breakEndStr || null, breakMinutes: bd.breakMinutes,
+        hours: bd.workedHours, paid: false
+      };
+    }
+  }
+
+  var bulkViewDate = new Date();
+  var bulkSelections = {}; // { 'YYYY-MM-DD': count }
+
+  function pad2(n){ return String(n).padStart(2, '0'); }
+
+  function openBulkModal(){
+    if (state.type === 'daily') {
+      var amt = parseFloat(document.getElementById('daily-amount').value) || 0;
+      if (amt <= 0) { toast('日当額を入力してください'); return; }
+    } else if (state.type === 'commission') {
+      var rev = parseFloat(document.getElementById('comm-revenue').value) || 0;
+      if (rev <= 0) { toast('売上金額を入力してください'); return; }
+    } else if (state.type === 'hourly') {
+      var wg = parseFloat(document.getElementById('hourly-wage').value) || 0;
+      var st = document.getElementById('hourly-start').value;
+      var et = document.getElementById('hourly-end').value;
+      var bst = document.getElementById('hourly-break-start').value;
+      var bet = document.getElementById('hourly-break-end').value;
+      if (wg <= 0 || !st || !et) { toast('時給と出勤・退勤時刻を入力してください'); return; }
+      var bdCheck = computeHourlyBreakdown(st, et, bst, bet, wg);
+      if (!bdCheck || bdCheck.workedHours <= 0) { toast('退勤時刻は出勤時刻より後になるようにしてください'); return; }
+    }
+    bulkSelections = {};
+    bulkViewDate = new Date();
+    document.getElementById('bulkOverlay').classList.add('open');
+    renderBulkCalendar();
+    renderBulkSummary();
+  }
+  function closeBulkModal(){
+    document.getElementById('bulkOverlay').classList.remove('open');
+  }
+  function bulkChangeMonth(diff){
+    bulkViewDate.setMonth(bulkViewDate.getMonth() + diff);
+    renderBulkCalendar();
+  }
+  function renderBulkCalendar(){
+    var y = bulkViewDate.getFullYear();
+    var m = bulkViewDate.getMonth();
+    document.getElementById('bulkMonthLabel').textContent = y + '年' + (m + 1) + '月';
+
+    var firstDow = new Date(y, m, 1).getDay();
+    var daysInMonth = new Date(y, m + 1, 0).getDate();
+    var dowLabels = ['日', '月', '火', '水', '木', '金', '土'];
+
+    var html = dowLabels.map(function(d){ return '<div class="bulk-dow">' + d + '</div>'; }).join('');
+    for (var i = 0; i < firstDow; i++) html += '<div class="bulk-day empty"></div>';
+
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateStr = y + '-' + pad2(m + 1) + '-' + pad2(d);
+      var cnt = bulkSelections[dateStr] || 0;
+      var selCls = cnt > 0 ? 'selected' : '';
+      var badge = cnt > 0 ? '<span class="cnt-badge">×' + cnt + '</span>' : '';
+      html += '<div class="bulk-day ' + selCls + '" onclick="bulkToggleDay(\'' + dateStr + '\')">' + d + badge + '</div>';
+    }
+    document.getElementById('bulkGrid').innerHTML = html;
+  }
+  function bulkToggleDay(dateStr){
+    var MAX = 9;
+    var cur = bulkSelections[dateStr] || 0;
+    var next = cur >= MAX ? 0 : cur + 1;
+    if (next === 0) delete bulkSelections[dateStr];
+    else bulkSelections[dateStr] = next;
+    renderBulkCalendar();
+    renderBulkSummary();
+  }
+  function renderBulkSummary(){
+    var dates = Object.keys(bulkSelections).sort();
+    var el = document.getElementById('bulkSummary');
+    var btn = document.getElementById('bulkConfirmBtn');
+    if (!dates.length) {
+      el.innerHTML = '日付が選択されていません';
+      btn.textContent = '登録する';
+      return;
+    }
+    var totalCount = dates.reduce(function(s, d){ return s + bulkSelections[d]; }, 0);
+    var preview = dates.slice(0, 4).map(function(d){
+      var parts = d.split('-');
+      return parseInt(parts[1], 10) + '/' + parseInt(parts[2], 10) + (bulkSelections[d] > 1 ? '×' + bulkSelections[d] : '');
+    }).join('、');
+    el.innerHTML = '<b>' + dates.length + '日 / 合計' + totalCount + '件</b>　' + preview + (dates.length > 4 ? ' 他' : '');
+    btn.textContent = '登録する（' + totalCount + '件）';
+  }
+  function confirmBulkAdd(){
+    var dates = Object.keys(bulkSelections);
+    if (!dates.length) { toast('日付を選択してください'); return; }
+    var added = 0;
+    var lastDate = dates.sort()[dates.length - 1];
+    dates.forEach(function(date){
+      var cnt = bulkSelections[date];
+      for (var i = 0; i < cnt; i++) {
+        var rec = buildRecordForDate(date);
+        rec.id = Date.now() + added;
+        state.records.unshift(rec);
+        added++;
+      }
+    });
+    saveRecords();
+    closeBulkModal();
+    renderHistory();
+    resetCalcForm(lastDate);
+    toast(added + '件まとめて記録しました');
+  }
+  document.getElementById('btnBulkEntryToggle').addEventListener('click', openBulkModal);
+  window.bulkChangeMonth = bulkChangeMonth;
+  window.bulkToggleDay = bulkToggleDay;
+  window.closeBulkModal = closeBulkModal;
+  window.confirmBulkAdd = confirmBulkAdd;
+
+  // 文字の大きさ
+  function applyFontScale(v){
+    document.documentElement.style.setProperty('--font-scale', v + '%');
+    document.querySelectorAll('.scale-btn').forEach(function(btn){
+      btn.classList.toggle('active', parseInt(btn.dataset.scale, 10) === v);
+    });
+    var slider = document.getElementById('scale-slider');
+    if (slider) slider.value = v;
+    var label = document.getElementById('scale-value');
+    if (label) label.textContent = v + '%';
+  }
+  document.querySelectorAll('.scale-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var v = parseInt(btn.dataset.scale, 10);
+      state.settings.fontScale = v;
+      saveSettings();
+      applyFontScale(v);
+    });
+  });
+  document.getElementById('scale-slider').addEventListener('input', function(){
+    var v = parseInt(this.value, 10);
+    state.settings.fontScale = v;
+    saveSettings();
+    applyFontScale(v);
+  });
+
+  // 初期値
+  document.getElementById('calc-date').value = todayStr();
+  document.getElementById('set-rate').value = state.settings.rate || 60;
+  document.getElementById('set-hourly').value = state.settings.hourly || 1200;
+  document.getElementById('set-closing').value = state.settings.closingDay || '';
+  document.getElementById('set-formula').value = state.settings.commissionFormula || 'A';
+  document.getElementById('set-night-pct').value = (state.settings.nightPct != null) ? state.settings.nightPct : 25;
+  document.getElementById('set-night-start').value = state.settings.nightStart || '22:00';
+  document.getElementById('set-night-end').value = state.settings.nightEnd || '05:00';
+  document.getElementById('set-ot-threshold').value = (state.settings.otThresholdHours != null) ? state.settings.otThresholdHours : 8;
+  document.getElementById('set-ot-pct').value = (state.settings.otPct != null) ? state.settings.otPct : 25;
+  document.getElementById('set-use-bands').checked = !!state.settings.useWageBands;
+  document.getElementById('comm-rate').value = state.settings.rate || 60;
+  document.getElementById('hourly-wage').value = state.settings.hourly || '';
+  document.getElementById('comm-formula').value = state.settings.commissionFormula || 'A';
+  document.getElementById('formulaHint').textContent = formulaHintText(document.getElementById('comm-formula').value);
+  updateExpenseVisibility();
+  refreshClientOptions();
+  renderClientMgmtList();
+  renderTemplateChips();
+  renderWageBandList();
+  ['hourly-wage', 'hourly-start', 'hourly-end', 'hourly-break-start', 'hourly-break-end'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', updateHourlyPreview);
+  });
+  applyFontScale(state.settings.fontScale || 100);
+  document.getElementById('comm-formula').addEventListener('change', function(){
+    document.getElementById('formulaHint').textContent = formulaHintText(this.value);
+    updateExpenseVisibility();
+  });
+
+  // タブ切り替え
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+      document.getElementById('view-' + btn.dataset.view).classList.add('active');
+      if (btn.dataset.view === 'history') renderHistory();
+    });
+  });
+
+  // 計算方式チップ
+  document.querySelectorAll('.type-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      document.querySelectorAll('.type-chip').forEach(function(c){ c.classList.remove('selected'); });
+      chip.classList.add('selected');
+      state.type = chip.dataset.type;
+      document.getElementById('form-daily').style.display = state.type === 'daily' ? '' : 'none';
+      document.getElementById('form-commission').style.display = state.type === 'commission' ? '' : 'none';
+      document.getElementById('form-hourly').style.display = state.type === 'hourly' ? '' : 'none';
+      document.getElementById('formTitle').textContent = formTitleText(state.type);
+      document.getElementById('btnCalc').textContent = calcButtonLabel(state.type);
+      document.getElementById('resultPanel').style.display = 'none';
+    });
+  });
+
+  // 計算実行
+  document.getElementById('btnCalc').addEventListener('click', function(){
+    var result = 0, breakdown = [], detail = '';
+    if (state.type === 'daily') {
+      var amount = parseFloat(document.getElementById('daily-amount').value) || 0;
+      if (amount <= 0) { toast('日当額を入力してください'); return; }
+      result = amount;
+      detail = '日当 ' + yen(amount);
+
+      state.lastResult = {
+        type: 'daily',
+        amount: result,
+        date: document.getElementById('calc-date').value || todayStr(),
+        memo: document.getElementById('calc-memo').value.trim(),
+        client: document.getElementById('calc-client').value,
+        detail: detail,
+        pending: false,
+        paid: false
+      };
+      saveLastResultRecord();
+      return;
+    } else if (state.type === 'commission') {
+      var revenue = parseFloat(document.getElementById('comm-revenue').value) || 0;
+      var expenseStr = document.getElementById('comm-expense').value;
+      var rate = parseFloat(document.getElementById('comm-rate').value);
+      var formulaSel = document.getElementById('comm-formula').value;
+      var formula = (formulaSel === 'B' || formulaSel === 'C') ? formulaSel : 'A';
+      if (isNaN(rate)) rate = 60;
+      if (revenue <= 0) { toast('売上金額を入力してください'); return; }
+      var pending = (formula !== 'C') && (expenseStr === '' || expenseStr === null);
+      var expense = pending ? 0 : (parseFloat(expenseStr) || 0);
+      result = computeCommission(revenue, expense, rate, formula, pending);
+      var formulaLabel = formula === 'B' ? '売上×歩合率−経費' : (formula === 'C' ? '売上×歩合率のみ（経費なし）' : '(売上-経費)×歩合率');
+      if (pending) {
+        breakdown = [['売上', yen(revenue)], ['経費', '未入力'], ['歩合率', rate + '%'], ['状態', '経費入力待ち（仮の金額）']];
+      } else if (formula === 'C') {
+        breakdown = [['売上', yen(revenue)], ['歩合率', rate + '%'], ['計算式', formulaLabel]];
+      } else {
+        breakdown = [['売上', yen(revenue)], ['経費', yen(expense)], ['歩合率', rate + '%'], ['計算式', formulaLabel]];
+      }
+      detail = commissionDetail(revenue, expense, rate, formula, pending);
+    } else if (state.type === 'hourly') {
+      var wage = parseFloat(document.getElementById('hourly-wage').value) || 0;
+      var startStr = document.getElementById('hourly-start').value;
+      var endStr = document.getElementById('hourly-end').value;
+      var breakStartStr = document.getElementById('hourly-break-start').value;
+      var breakEndStr = document.getElementById('hourly-break-end').value;
+      if (wage <= 0 || !startStr || !endStr) { toast('時給と出勤・退勤時刻を入力してください'); return; }
+      var hbd = computeHourlyBreakdown(startStr, endStr, breakStartStr, breakEndStr, wage);
+      if (!hbd || hbd.workedHours <= 0) { toast('退勤時刻は出勤時刻より後になるようにしてください'); return; }
+      result = hbd.amount;
+      breakdown = [['出勤〜退勤', startStr + '〜' + endStr]];
+      if (breakStartStr && breakEndStr) breakdown.push(['休憩', breakStartStr + '〜' + breakEndStr]);
+      hbd.segments.forEach(function(s){
+        breakdown.push([s.label, (Math.round((s.minutes / 60) * 10) / 10) + 'h（' + yen((s.minutes / 60) * s.rate) + '）']);
+      });
+      detail = hourlyDetail(hbd, startStr, endStr, breakStartStr, breakEndStr);
+    }
+
+    state.lastResult = {
+      type: state.type,
+      amount: result,
+      date: document.getElementById('calc-date').value || todayStr(),
+      memo: document.getElementById('calc-memo').value.trim(),
+      client: document.getElementById('calc-client').value,
+      detail: detail,
+      pending: (state.type === 'commission') ? pending : false,
+      revenue: (state.type === 'commission') ? revenue : undefined,
+      expense: (state.type === 'commission') ? (formula === 'C' ? null : (pending ? null : expense)) : undefined,
+      rate: (state.type === 'commission') ? rate : undefined,
+      formula: (state.type === 'commission') ? formula : undefined,
+      wage: (state.type === 'hourly') ? wage : undefined,
+      startTime: (state.type === 'hourly') ? startStr : undefined,
+      endTime: (state.type === 'hourly') ? endStr : undefined,
+      breakStart: (state.type === 'hourly') ? (breakStartStr || null) : undefined,
+      breakEnd: (state.type === 'hourly') ? (breakEndStr || null) : undefined,
+      breakMinutes: (state.type === 'hourly') ? hbd.breakMinutes : undefined,
+      hours: (state.type === 'hourly') ? hbd.workedHours : undefined,
+      paid: false
+    };
+
+    document.getElementById('resultAmount').innerHTML = yen(result) + '<span>円</span>';
+    var bd = document.getElementById('resultBreakdown');
+    bd.innerHTML = '';
+    breakdown.forEach(function(item){
+      var el = document.createElement('div');
+      el.className = 'bd-item';
+      el.innerHTML = '<div class="bd-label">' + item[0] + '</div><div class="bd-val">' + item[1] + '</div>';
+      bd.appendChild(el);
+    });
+    document.getElementById('resultPanel').style.display = '';
+    var note = document.getElementById('resultNote');
+    if (state.lastResult.pending) {
+      note.textContent = '⚠️ 経費が未入力のため、これは歩合率だけを掛けた仮の金額です。保存後、履歴タブでいつでも経費を入力して金額を確定できます。';
+      note.style.display = '';
+    } else {
+      note.style.display = 'none';
+    }
+    document.getElementById('resultPanel').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  });
+
+  // 保存
+  function saveLastResultRecord(){
+    if (!state.lastResult) return;
+    var rec = Object.assign({ id: Date.now() }, state.lastResult);
+    state.records.unshift(rec);
+    saveRecords();
+    toast('記録を保存しました');
+    document.getElementById('resultPanel').style.display = 'none';
+    resetCalcForm(rec.date);
+  }
+  document.getElementById('btnSave').addEventListener('click', saveLastResultRecord);
+
+  function nextDayStr(dateStr){
+    var d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function resetCalcForm(baseDate){
+    document.getElementById('daily-amount').value = '';
+    document.getElementById('comm-revenue').value = '';
+    document.getElementById('comm-expense').value = '';
+    document.getElementById('comm-rate').value = state.settings.rate || 60;
+    document.getElementById('hourly-wage').value = state.settings.hourly || '';
+    document.getElementById('hourly-start').value = '';
+    document.getElementById('hourly-end').value = '';
+    document.getElementById('hourly-break-start').value = '';
+    document.getElementById('hourly-break-end').value = '';
+    document.getElementById('hourlyPreview').textContent = '';
+    document.getElementById('comm-formula').value = state.settings.commissionFormula || 'A';
+    document.getElementById('formulaHint').textContent = formulaHintText(document.getElementById('comm-formula').value);
+    updateExpenseVisibility();
+    document.getElementById('calc-memo').value = '';
+    document.getElementById('calc-date').value = baseDate ? nextDayStr(baseDate) : todayStr();
+    state.lastResult = null;
+  }
+
+  // 設定保存
+  document.getElementById('btnSaveSettings').addEventListener('click', function(){
+    var rate = parseFloat(document.getElementById('set-rate').value);
+    var hourly = parseFloat(document.getElementById('set-hourly').value);
+    var closing = parseInt(document.getElementById('set-closing').value, 10);
+    var formulaSel = document.getElementById('set-formula').value;
+    var formula = (formulaSel === 'B' || formulaSel === 'C') ? formulaSel : 'A';
+    var nightPct = parseFloat(document.getElementById('set-night-pct').value);
+    var otThreshold = parseFloat(document.getElementById('set-ot-threshold').value);
+    var otPct = parseFloat(document.getElementById('set-ot-pct').value);
+    state.settings.rate = isNaN(rate) ? 60 : rate;
+    state.settings.hourly = isNaN(hourly) ? 1200 : hourly;
+    state.settings.closingDay = (isNaN(closing) || closing < 1 || closing > 31) ? 0 : closing;
+    state.settings.commissionFormula = formula;
+    state.settings.nightPct = isNaN(nightPct) ? 25 : nightPct;
+    state.settings.nightStart = document.getElementById('set-night-start').value || '22:00';
+    state.settings.nightEnd = document.getElementById('set-night-end').value || '05:00';
+    state.settings.otThresholdHours = isNaN(otThreshold) ? 8 : otThreshold;
+    state.settings.otPct = isNaN(otPct) ? 25 : otPct;
+    state.settings.useWageBands = document.getElementById('set-use-bands').checked;
+    saveSettings();
+    document.getElementById('comm-rate').value = state.settings.rate;
+    document.getElementById('comm-formula').value = formula;
+    document.getElementById('formulaHint').textContent = formulaHintText(formula);
+    updateExpenseVisibility();
+    if (!document.getElementById('hourly-wage').value) document.getElementById('hourly-wage').value = state.settings.hourly;
+    updateHourlyPreview();
+    renderHistory();
+    toast('設定を保存しました');
+  });
+
+  // 時間帯別の時給（上級者向け）
+  function renderWageBandList(){
+    var list = document.getElementById('wageBandList');
+    var bands = state.settings.wageBands || [];
+    if (bands.length === 0) {
+      list.innerHTML = '<div class="hint">まだ登録されていません。</div>';
+      return;
+    }
+    list.innerHTML = '';
+    bands.forEach(function(b){
+      var row = document.createElement('div');
+      row.className = 'band-row';
+      row.innerHTML = '<span>' + (b.label ? escapeHtml(b.label) + '：' : '') + b.start + '〜' + b.end + '　' + yen(b.rate) + '</span><button type="button">✕</button>';
+      row.querySelector('button').addEventListener('click', function(){
+        state.settings.wageBands = state.settings.wageBands.filter(function(x){ return x.id !== b.id; });
+        saveSettings();
+        renderWageBandList();
+        updateHourlyPreview();
+        toast('時間帯を削除しました');
+      });
+      list.appendChild(row);
+    });
+  }
+  document.getElementById('btnAddBand').addEventListener('click', function(){
+    var start = document.getElementById('new-band-start').value;
+    var end = document.getElementById('new-band-end').value;
+    var rate = parseFloat(document.getElementById('new-band-rate').value);
+    var label = document.getElementById('new-band-label').value.trim();
+    if (!start || !end) { toast('開始と終了の時刻を入力してください'); return; }
+    if (!rate || rate <= 0) { toast('時給を入力してください'); return; }
+    state.settings.wageBands = state.settings.wageBands || [];
+    state.settings.wageBands.push({ id: Date.now(), start: start, end: end, rate: rate, label: label });
+    saveSettings();
+    document.getElementById('new-band-start').value = '';
+    document.getElementById('new-band-end').value = '';
+    document.getElementById('new-band-rate').value = '';
+    document.getElementById('new-band-label').value = '';
+    renderWageBandList();
+    updateHourlyPreview();
+    toast('時間帯を追加しました');
+  });
+
+  // 共有
+  document.getElementById('btnShare').addEventListener('click', function(){
+    var url = location.href;
+    if (navigator.share) {
+      navigator.share({ title: 'CleanPay 給料計算アプリ', url: url }).catch(function(){});
+    } else {
+      navigator.clipboard && navigator.clipboard.writeText(url);
+      toast('URLをコピーしました');
+    }
+  });
+
+  // 履歴
+  var typeIcon = { daily:'📅', commission:'📊', hourly:'⏱️' };
+  function daysInMonth(y, m){ return new Date(y, m + 1, 0).getDate(); }
+  function getPeriodRange(cursor, closingDay){
+    var y = cursor.getFullYear(), m = cursor.getMonth();
+    if (!closingDay) {
+      var start = new Date(y, m, 1);
+      var end = new Date(y, m, daysInMonth(y, m));
+      return { start: start, end: end, label: y + '年' + (m + 1) + '月' };
+    }
+    var endDay = Math.min(closingDay, daysInMonth(y, m));
+    var end = new Date(y, m, endDay);
+    var prevM = m - 1, prevY = y;
+    if (prevM < 0) { prevM = 11; prevY = y - 1; }
+    var prevEndDay = Math.min(closingDay, daysInMonth(prevY, prevM));
+    var start = new Date(prevY, prevM, prevEndDay + 1);
+    var label = y + '年' + (m + 1) + '月度（' + (start.getMonth() + 1) + '/' + start.getDate() + '〜' + (end.getMonth() + 1) + '/' + end.getDate() + '）';
+    return { start: start, end: end, label: label };
+  }
+  function renderTrendChart(clientFilter){
+    var months = [];
+    for (var i = 5; i >= 0; i--) {
+      var d = new Date(state.monthCursor.getFullYear(), state.monthCursor.getMonth() - i, 1);
+      var period = getPeriodRange(d, state.settings.closingDay || 0);
+      var recs = state.records.filter(function(r){
+        var rd = new Date(r.date);
+        if (!(rd >= period.start && rd <= period.end)) return false;
+        if (clientFilter && clientFilter !== '__all__' && (r.client || '') !== clientFilter) return false;
+        return true;
+      });
+      var total = recs.reduce(function(s, r){ return s + r.amount; }, 0);
+      months.push({ label: (d.getMonth() + 1) + '月', total: total });
+    }
+    var max = Math.max.apply(null, months.map(function(m){ return m.total; })) || 1;
+    var barWidth = 36, gap = 16, chartHeight = 100, topPad = 22, bottomPad = 22;
+    var svgWidth = months.length * (barWidth + gap) + gap;
+    var svgHeight = chartHeight + topPad + bottomPad;
+    var bars = months.map(function(m, idx){
+      var h = Math.max(4, (m.total / max) * chartHeight);
+      var x = gap + idx * (barWidth + gap);
+      var y = topPad + (chartHeight - h);
+      var valueLabel = m.total >= 10000 ? Math.round(m.total / 1000) + 'k' : (m.total > 0 ? Math.round(m.total) : '');
+      return '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + h + '" rx="6" fill="#4a90d9"></rect>' +
+        '<text x="' + (x + barWidth / 2) + '" y="' + (svgHeight - 4) + '" text-anchor="middle" font-size="11" fill="#6b7590">' + m.label + '</text>' +
+        '<text x="' + (x + barWidth / 2) + '" y="' + (y - 6) + '" text-anchor="middle" font-size="10" fill="#1a2744" font-weight="700">' + valueLabel + '</text>';
+    }).join('');
+    document.getElementById('trendChart').innerHTML =
+      '<svg viewBox="0 0 ' + svgWidth + ' ' + svgHeight + '" width="100%" height="140" preserveAspectRatio="xMidYMid meet">' + bars + '</svg>';
+  }
+
+  function renderHistory(){
+    var cur = state.monthCursor;
+    var period = getPeriodRange(cur, state.settings.closingDay || 0);
+    document.getElementById('monthLabel').textContent = period.label;
+    var clientFilter = document.getElementById('historyClientFilter').value;
+    var monthRecords = state.records.filter(function(r){
+      var d = new Date(r.date);
+      if (!(d >= period.start && d <= period.end)) return false;
+      if (clientFilter && clientFilter !== '__all__' && (r.client || '') !== clientFilter) return false;
+      return true;
+    });
+    var total = monthRecords.reduce(function(sum, r){ return sum + r.amount; }, 0);
+    var hasPending = monthRecords.some(function(r){ return r.type === 'commission' && r.pending; });
+    var unpaidRecords = monthRecords.filter(function(r){ return !r.paid; });
+    var unpaidTotal = unpaidRecords.reduce(function(s, r){ return s + r.amount; }, 0);
+    document.getElementById('monthTotal').innerHTML = yen(total) + '<span>円</span>' +
+      (hasPending ? '<span style="font-size:11px;color:#ffd76a;margin-left:8px;">※経費未確定あり</span>' : '') +
+      (unpaidRecords.length > 0 ? '<span style="font-size:11px;color:#ff8a65;margin-left:8px;">未入金 ' + unpaidRecords.length + '件（' + yen(unpaidTotal) + '）</span>' : '');
+
+    var typeTotals = { daily: 0, commission: 0, hourly: 0 };
+    monthRecords.forEach(function(r){ typeTotals[r.type] = (typeTotals[r.type] || 0) + r.amount; });
+    document.getElementById('typeBreakdown').innerHTML =
+      '<div class="bd-item"><div class="bd-label">📅 日当</div><div class="bd-val">' + yen(typeTotals.daily) + '</div></div>' +
+      '<div class="bd-item"><div class="bd-label">📊 歩合</div><div class="bd-val">' + yen(typeTotals.commission) + '</div></div>' +
+      '<div class="bd-item"><div class="bd-label">⏱️ 時給</div><div class="bd-val">' + yen(typeTotals.hourly) + '</div></div>';
+
+    renderTrendChart(clientFilter);
+
+    var pendingInPeriod = monthRecords.filter(function(r){ return r.type === 'commission' && r.pending; });
+    var bulkPanel = document.getElementById('bulkExpensePanel');
+    if (pendingInPeriod.length > 0) {
+      bulkPanel.style.display = '';
+      var revSum = pendingInPeriod.reduce(function(s, r){ return s + r.revenue; }, 0);
+      document.getElementById('bulkHint').textContent =
+        '経費未入力の歩合制記録が' + pendingInPeriod.length + '件（売上合計' + yen(revSum) + '）あります。今期の経費合計を入力すると、売上の比率で自動配分してまとめて確定できます。';
+    } else {
+      bulkPanel.style.display = 'none';
+    }
+
+    var list = document.getElementById('recordList');
+    list.innerHTML = '';
+    if (monthRecords.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="ei">📭</div><p>この期間の記録はまだありません</p></div>';
+      return;
+    }
+    monthRecords.forEach(function(r){
+      list.appendChild(renderRecordCard(r));
+    });
+  }
+
+  function renderRecordCard(r){
+    var wrap = document.createElement('div');
+    wrap.className = 'record-card-wrap';
+    var title = r.memo || typeMeta[r.type].label;
+    var pendingBadge = (r.type === 'commission' && r.pending) ? ' <span class="pending-badge">経費未入力</span>' : '';
+    var card = document.createElement('div');
+    card.className = 'record-card';
+    card.innerHTML =
+      '<div class="rec-badge">' + typeIcon[r.type] + '</div>' +
+      '<div class="rec-info"><div class="rec-title">' + escapeHtml(title) + pendingBadge + '</div>' +
+      '<div class="rec-meta">' + r.date + (r.client ? ' ・ ' + escapeHtml(r.client) : '') + ' ・ ' + escapeHtml(r.detail) + '</div></div>' +
+      '<div class="rec-amount-col"><div class="rec-amount">' + yen(r.amount) + '</div>' +
+      '<button class="paid-chip ' + (r.paid ? 'paid' : 'unpaid') + '" type="button">' + (r.paid ? '✅ 入金済' : '🕒 未入金') + '</button></div>' +
+      '<button class="rec-edit" title="編集">✏️</button>' +
+      '<button class="rec-del" title="削除">🗑️</button>';
+    wrap.appendChild(card);
+
+    card.querySelector('.paid-chip').addEventListener('click', function(){
+      r.paid = !r.paid;
+      saveRecords();
+      renderHistory();
+    });
+
+    // 削除確認
+    var confirmRow = document.createElement('div');
+    confirmRow.className = 'confirm-del-row';
+    confirmRow.style.display = 'none';
+    confirmRow.innerHTML =
+      '<span class="cd-msg">本当に削除しますか？（' + escapeHtml(title) + ' ' + yen(r.amount) + '）</span>' +
+      '<button class="btn btn-outline btn-sm" type="button">キャンセル</button>' +
+      '<button class="btn btn-sm" type="button" style="background:var(--danger);color:#fff;">削除する</button>';
+    wrap.appendChild(confirmRow);
+    var cdButtons = confirmRow.querySelectorAll('button');
+    cdButtons[0].addEventListener('click', function(){ confirmRow.style.display = 'none'; });
+    cdButtons[1].addEventListener('click', function(){
+      state.records = state.records.filter(function(x){ return x.id !== r.id; });
+      saveRecords();
+      renderHistory();
+      toast('削除しました');
+    });
+    card.querySelector('.rec-del').addEventListener('click', function(){
+      editPanel.style.display = 'none';
+      confirmRow.style.display = confirmRow.style.display === 'flex' ? 'none' : 'flex';
+    });
+
+    // 編集フォーム
+    var editPanel = document.createElement('div');
+    editPanel.className = 'edit-panel';
+    editPanel.style.display = 'none';
+
+    var fieldsHtml = '';
+    if (r.type === 'daily') {
+      fieldsHtml =
+        '<div class="form-row s1"><div class="form-group"><label>日当額（円）</label>' +
+        '<input type="number" class="ef-amount" value="' + r.amount + '" inputmode="numeric"></div></div>';
+    } else if (r.type === 'commission') {
+      fieldsHtml =
+        '<div class="form-row">' +
+        '<div class="form-group"><label>売上（円）</label><input type="number" class="ef-revenue" value="' + r.revenue + '" inputmode="numeric"></div>' +
+        '<div class="form-group ef-expense-group"><label>経費（円）</label><input type="number" class="ef-expense" value="' + (r.expense == null ? '' : r.expense) + '" placeholder="未入力でもOK" inputmode="numeric"></div>' +
+        '</div>' +
+        '<div class="form-row">' +
+        '<div class="form-group"><label>歩合率（%）</label><input type="number" class="ef-rate" value="' + r.rate + '" inputmode="numeric"></div>' +
+        '<div class="form-group"><label>計算式</label><select class="ef-formula">' +
+        '<option value="A"' + (r.formula === 'A' || !r.formula ? ' selected' : '') + '>(売上−経費)×歩合率</option>' +
+        '<option value="B"' + (r.formula === 'B' ? ' selected' : '') + '>売上×歩合率−経費</option>' +
+        '<option value="C"' + (r.formula === 'C' ? ' selected' : '') + '>売上×歩合率のみ（経費考慮なし）</option>' +
+        '</select></div>' +
+        '</div>';
+    } else if (r.type === 'hourly') {
+      if (r.startTime) {
+        fieldsHtml =
+          '<div class="form-row s1"><div class="form-group"><label>基本時給（円）</label><input type="number" class="ef-wage" value="' + r.wage + '" inputmode="numeric"></div></div>' +
+          '<div class="form-row">' +
+          '<div class="form-group"><label>出勤時刻</label><input type="time" class="ef-start" value="' + r.startTime + '"></div>' +
+          '<div class="form-group"><label>退勤時刻</label><input type="time" class="ef-end" value="' + r.endTime + '"></div>' +
+          '</div>' +
+          '<div class="form-row">' +
+          '<div class="form-group"><label>休憩開始（任意）</label><input type="time" class="ef-break-start" value="' + (r.breakStart || '') + '"></div>' +
+          '<div class="form-group"><label>休憩終了（任意）</label><input type="time" class="ef-break-end" value="' + (r.breakEnd || '') + '"></div>' +
+          '</div>';
+      } else {
+        fieldsHtml =
+          '<div class="form-row">' +
+          '<div class="form-group"><label>時給（円）</label><input type="number" class="ef-wage" value="' + (r.wage || '') + '" inputmode="numeric"></div>' +
+          '<div class="form-group"><label>稼働時間（h）</label><input type="number" step="0.1" class="ef-hours" value="' + (r.hours || '') + '" inputmode="decimal"></div>' +
+          '</div>';
+      }
+    }
+    fieldsHtml +=
+      '<div class="form-row s1">' +
+      '<div class="form-group"><label>取引先・元請け</label><select class="ef-client">' + clientOptionsHtml(r.client) + '</select></div>' +
+      '</div>' +
+      '<div class="form-row">' +
+      '<div class="form-group"><label>日付</label><input type="date" class="ef-date" value="' + r.date + '"></div>' +
+      '<div class="form-group"><label>メモ</label><input type="text" class="ef-memo" value="' + escapeHtml(r.memo || '') + '"></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:4px;">' +
+      '<button class="btn btn-outline btn-sm ef-cancel" type="button" style="flex:1;">キャンセル</button>' +
+      '<button class="btn btn-accent btn-sm ef-save" type="button" style="flex:1;">保存する</button>' +
+      '</div>';
+    editPanel.innerHTML = fieldsHtml;
+    wrap.appendChild(editPanel);
+
+    if (r.type === 'commission') {
+      var efFormulaSel = editPanel.querySelector('.ef-formula');
+      var efExpenseGroup = editPanel.querySelector('.ef-expense-group');
+      var toggleEfExpense = function(){
+        efExpenseGroup.style.display = efFormulaSel.value === 'C' ? 'none' : '';
+      };
+      toggleEfExpense();
+      efFormulaSel.addEventListener('change', toggleEfExpense);
+    }
+
+    editPanel.querySelector('.ef-cancel').addEventListener('click', function(){ editPanel.style.display = 'none'; });
+    editPanel.querySelector('.ef-save').addEventListener('click', function(){
+      if (r.type === 'daily') {
+        var amt = parseFloat(editPanel.querySelector('.ef-amount').value) || 0;
+        r.amount = amt;
+        r.detail = '日当 ' + yen(amt);
+      } else if (r.type === 'commission') {
+        var revenue = parseFloat(editPanel.querySelector('.ef-revenue').value) || 0;
+        var expenseStr = editPanel.querySelector('.ef-expense').value;
+        var rate = parseFloat(editPanel.querySelector('.ef-rate').value);
+        var formulaSel2 = editPanel.querySelector('.ef-formula').value;
+        var formula = (formulaSel2 === 'B' || formulaSel2 === 'C') ? formulaSel2 : 'A';
+        if (isNaN(rate)) rate = state.settings.rate || 60;
+        var pending = (formula !== 'C') && (expenseStr === '' || expenseStr === null);
+        var expense = pending ? 0 : (parseFloat(expenseStr) || 0);
+        r.revenue = revenue;
+        r.rate = rate;
+        r.formula = formula;
+        r.pending = pending;
+        r.expense = (formula === 'C') ? null : (pending ? null : expense);
+        r.amount = computeCommission(revenue, expense, rate, formula, pending);
+        r.detail = commissionDetail(revenue, expense, rate, formula, pending);
+      } else if (r.type === 'hourly') {
+        var wage = parseFloat(editPanel.querySelector('.ef-wage').value) || 0;
+        if (editPanel.querySelector('.ef-start')) {
+          var startStr = editPanel.querySelector('.ef-start').value;
+          var endStr = editPanel.querySelector('.ef-end').value;
+          var breakStartStr = editPanel.querySelector('.ef-break-start').value;
+          var breakEndStr = editPanel.querySelector('.ef-break-end').value;
+          var hbd = computeHourlyBreakdown(startStr, endStr, breakStartStr, breakEndStr, wage);
+          if (hbd && hbd.workedHours > 0) {
+            r.wage = wage;
+            r.startTime = startStr;
+            r.endTime = endStr;
+            r.breakStart = breakStartStr || null;
+            r.breakEnd = breakEndStr || null;
+            r.breakMinutes = hbd.breakMinutes;
+            r.hours = hbd.workedHours;
+            r.amount = hbd.amount;
+            r.detail = hourlyDetail(hbd, startStr, endStr, breakStartStr, breakEndStr);
+          } else {
+            toast('退勤時刻は出勤時刻より後になるようにしてください');
+            return;
+          }
+        } else {
+          var hours = parseFloat(editPanel.querySelector('.ef-hours').value) || 0;
+          r.wage = wage;
+          r.hours = hours;
+          r.amount = wage * hours;
+          r.detail = yen(wage) + ' × ' + hours + 'h';
+        }
+      }
+      r.date = editPanel.querySelector('.ef-date').value || r.date;
+      r.memo = editPanel.querySelector('.ef-memo').value.trim();
+      r.client = editPanel.querySelector('.ef-client').value;
+      saveRecords();
+      renderHistory();
+      toast('更新しました');
+    });
+    card.querySelector('.rec-edit').addEventListener('click', function(){
+      confirmRow.style.display = 'none';
+      editPanel.style.display = editPanel.style.display === 'block' ? 'none' : 'block';
+    });
+
+    return wrap;
+  }
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c];
+    });
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', function(){
+    state.monthCursor.setMonth(state.monthCursor.getMonth() - 1);
+    renderHistory();
+  });
+  document.getElementById('nextMonth').addEventListener('click', function(){
+    state.monthCursor.setMonth(state.monthCursor.getMonth() + 1);
+    renderHistory();
+  });
+
+  document.getElementById('btnBulkConfirm').addEventListener('click', function(){
+    var period = getPeriodRange(state.monthCursor, state.settings.closingDay || 0);
+    var clientFilter = document.getElementById('historyClientFilter').value;
+    var pendingRecords = state.records.filter(function(r){
+      var d = new Date(r.date);
+      if (!(r.type === 'commission' && r.pending && d >= period.start && d <= period.end)) return false;
+      if (clientFilter && clientFilter !== '__all__' && (r.client || '') !== clientFilter) return false;
+      return true;
+    });
+    if (pendingRecords.length === 0) { toast('経費未入力の歩合制記録がありません'); return; }
+    var totalRevenue = pendingRecords.reduce(function(s, r){ return s + r.revenue; }, 0);
+    if (totalRevenue <= 0) { toast('売上合計が0円です'); return; }
+    var expenseTotal = parseFloat(document.getElementById('bulk-expense-total').value) || 0;
+    pendingRecords.forEach(function(r){
+      var share = r.revenue / totalRevenue;
+      var expShare = expenseTotal * share;
+      r.expense = expShare;
+      r.amount = computeCommission(r.revenue, expShare, r.rate, r.formula, false);
+      r.pending = false;
+      r.detail = (r.formula === 'B')
+        ? ('売上' + yen(r.revenue) + ' ×' + r.rate + '% − 経費' + yen(expShare) + '（按分）')
+        : (r.formula === 'C')
+          ? ('売上' + yen(r.revenue) + ' ×' + r.rate + '%（経費なし）')
+          : ('売上' + yen(r.revenue) + ' 経費' + yen(expShare) + '（按分）×' + r.rate + '%');
+    });
+    saveRecords();
+    document.getElementById('bulk-expense-total').value = '';
+    renderHistory();
+    toast('経費をまとめて確定しました（' + pendingRecords.length + '件）');
+  });
+
+  // 書き出し（PDF・CSV）
+  function currentFilteredRecords(){
+    var period = getPeriodRange(state.monthCursor, state.settings.closingDay || 0);
+    var clientFilter = document.getElementById('historyClientFilter').value;
+    return state.records.filter(function(r){
+      var d = new Date(r.date);
+      if (!(d >= period.start && d <= period.end)) return false;
+      if (clientFilter && clientFilter !== '__all__' && (r.client || '') !== clientFilter) return false;
+      return true;
+    }).sort(function(a, b){ return new Date(a.date) - new Date(b.date); });
+  }
+  function currentPeriodLabel(){
+    var period = getPeriodRange(state.monthCursor, state.settings.closingDay || 0);
+    var clientFilter = document.getElementById('historyClientFilter').value;
+    var label = period.label;
+    if (clientFilter && clientFilter !== '__all__') label += '（' + clientFilter + '）';
+    return label;
+  }
+  function sanitizeFileName(s){
+    return String(s).replace(/[\\/:*?"<>|（）〜]/g, function(c){
+      return { '（':'(', '）':')', '〜':'-' }[c] || '-';
+    });
+  }
+
+  document.getElementById('btnExportCsv').addEventListener('click', function(){
+    var records = currentFilteredRecords();
+    if (records.length === 0) { toast('書き出す記録がありません'); return; }
+    var rows = [['日付', '取引先', '種類', '内容', '金額（円）', 'メモ']];
+    records.forEach(function(r){
+      rows.push([r.date, r.client || '', typeMeta[r.type].label, r.detail, Math.round(r.amount), r.memo || '']);
+    });
+    var total = records.reduce(function(s, r){ return s + r.amount; }, 0);
+    rows.push(['', '', '', '合計', Math.round(total), '']);
+    var csv = rows.map(function(row){
+      return row.map(function(cell){
+        return '"' + String(cell).replace(/"/g, '""') + '"';
+      }).join(',');
+    }).join('\r\n');
+    var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'CleanPay_' + sanitizeFileName(currentPeriodLabel()) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('CSVを書き出しました');
+  });
+
+  document.getElementById('btnExportPdf').addEventListener('click', function(){
+    var records = currentFilteredRecords();
+    if (records.length === 0) { toast('書き出す記録がありません'); return; }
+    var total = records.reduce(function(s, r){ return s + r.amount; }, 0);
+    var typeTotals = { daily: 0, commission: 0, hourly: 0 };
+    records.forEach(function(r){ typeTotals[r.type] = (typeTotals[r.type] || 0) + r.amount; });
+    var rowsHtml = records.map(function(r){
+      return '<tr><td>' + r.date + '</td><td>' + escapeHtml(r.client || '-') + '</td><td>' +
+        typeMeta[r.type].label + '</td><td>' + escapeHtml(r.detail) + '</td><td style="text-align:right;">' +
+        yen(r.amount) + '</td></tr>';
+    }).join('');
+    document.getElementById('printArea').innerHTML =
+      '<h1>CleanPay 給料記録</h1>' +
+      '<p class="print-period">' + escapeHtml(currentPeriodLabel()) + '</p>' +
+      '<table><thead><tr><th>日付</th><th>取引先</th><th>種類</th><th>内容</th><th>金額</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+      '<div class="print-total">合計：' + yen(total) + '</div>' +
+      '<div class="print-breakdown">日当 ' + yen(typeTotals.daily) + ' ／ 歩合 ' + yen(typeTotals.commission) + ' ／ 時給 ' + yen(typeTotals.hourly) + '</div>';
+    window.print();
+  });
+
+  document.getElementById('btnBulkToCleanBill').addEventListener('click', function(){
+    var records = currentFilteredRecords();
+    if (records.length === 0) { toast('送る記録がありません'); return; }
+    var items = records.map(function(r){
+      return { c: r.client || '', a: Math.round(r.amount), d: r.date, m: r.memo || typeMeta[r.type].label };
+    });
+    var params = new URLSearchParams();
+    params.set('from', 'cleanpay');
+    params.set('bulk', '1');
+    params.set('items', JSON.stringify(items));
+    window.open('https://cleanbillapp.github.io/PLOMPT/?' + params.toString(), '_blank');
+  });
+
+  // バックアップ・復元
+  var pendingImportData = null;
+  document.getElementById('btnBackupExport').addEventListener('click', function(){
+    var payload = {
+      app: 'CleanPay',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      records: state.records,
+      settings: state.settings
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'CleanPay_backup_' + todayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('バックアップを書き出しました');
+  });
+  document.getElementById('btnBackupImport').addEventListener('click', function(){
+    document.getElementById('backupFileInput').click();
+  });
+  document.getElementById('backupFileInput').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try {
+        var data = JSON.parse(ev.target.result);
+        if (!data || !Array.isArray(data.records)) {
+          toast('バックアップファイルの形式が正しくありません');
+          return;
+        }
+        pendingImportData = data;
+        document.getElementById('importConfirmMsg').textContent =
+          data.records.length + '件の記録を読み込みます。現在のデータ（' + state.records.length + '件）は上書きされます。よろしいですか？';
+        document.getElementById('importConfirmPanel').style.display = 'block';
+      } catch (err) {
+        toast('ファイルの読み込みに失敗しました');
+      }
+    };
+    reader.readAsText(file);
+  });
+  document.getElementById('btnImportCancel').addEventListener('click', function(){
+    pendingImportData = null;
+    document.getElementById('importConfirmPanel').style.display = 'none';
+  });
+  document.getElementById('btnImportConfirm').addEventListener('click', function(){
+    if (!pendingImportData) return;
+    state.records = pendingImportData.records || [];
+    if (pendingImportData.settings) state.settings = pendingImportData.settings;
+    saveRecords();
+    saveSettings();
+    pendingImportData = null;
+    document.getElementById('importConfirmPanel').style.display = 'none';
+    document.getElementById('set-rate').value = state.settings.rate || 60;
+    document.getElementById('set-hourly').value = state.settings.hourly || 1200;
+    document.getElementById('set-closing').value = state.settings.closingDay || '';
+    document.getElementById('set-formula').value = state.settings.commissionFormula || 'A';
+    refreshClientOptions();
+    renderClientMgmtList();
+    renderTemplateChips();
+    applyFontScale(state.settings.fontScale || 100);
+    renderHistory();
+    toast('バックアップを読み込みました');
+  });
+
+  renderHistory();
+})();
+</script>
+
+</body>
+</html>
